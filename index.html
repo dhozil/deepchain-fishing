@@ -16,7 +16,7 @@ body {
     overflow: hidden;
 }
 
-/* Overlay */
+/* overlay */
 .overlay {
     position: absolute;
     width: 100%;
@@ -24,21 +24,21 @@ body {
     background: rgba(0,0,0,0.35);
 }
 
-/* Wallet Button */
+/* wallet button */
 #walletBtn {
     position: absolute;
     top: 20px;
     right: 20px;
     padding: 12px 20px;
-    border: none;
     border-radius: 10px;
+    border: none;
     background: #00cfff;
     font-weight: bold;
     cursor: pointer;
     z-index: 10;
 }
 
-/* Center Box */
+/* login box */
 .center-box {
     position: absolute;
     top: 70%;
@@ -53,8 +53,6 @@ body {
 
 .center-box h2 {
     color: white;
-    margin-bottom: 15px;
-    font-size: 22px;
 }
 
 input {
@@ -62,20 +60,20 @@ input {
     padding: 12px;
     border-radius: 6px;
     border: none;
-    margin-bottom: 15px;
-    font-size: 14px;
+    margin-top: 10px;
 }
 
 button {
+    margin-top: 10px;
     padding: 10px 20px;
-    border: none;
     border-radius: 8px;
+    border: none;
     background: #00cfff;
     font-weight: bold;
     cursor: pointer;
 }
 
-/* Game UI */
+/* game UI */
 #gameUI {
     display: none;
     position: absolute;
@@ -88,9 +86,7 @@ button {
 
 #castBtn {
     background: gold;
-    margin-top: 10px;
 }
-
 </style>
 </head>
 
@@ -137,22 +133,31 @@ async function connectWallet() {
 
         provider = new ethers.providers.Web3Provider(window.ethereum);
 
-        // FIX NETWORK GENLAYER
-        await window.ethereum.request({
-            method: "wallet_addEthereumChain",
-            params: [{
-                chainId: "0xF21F", // ✅ FIXED
-                chainName: "GenLayer Studio",
-                rpcUrls: ["https://studio.genlayer.com/api"],
-                nativeCurrency: {
-                    name: "GEN",
-                    symbol: "GEN",
-                    decimals: 18
-                },
-                blockExplorerUrls: ["https://explorer-studio.genlayer.com"]
-            }]
-        });
+        // TRY SWITCH FIRST
+        try {
+            await window.ethereum.request({
+                method: "wallet_switchEthereumChain",
+                params: [{ chainId: "0xF23F" }]
+            });
+        } catch (switchError) {
+            // IF NOT ADDED → ADD NETWORK
+            await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: "0xF23F",
+                    chainName: "GenLayer Studio",
+                    rpcUrls: ["https://studio.genlayer.com/api"],
+                    nativeCurrency: {
+                        name: "GEN",
+                        symbol: "GEN",
+                        decimals: 18
+                    },
+                    blockExplorerUrls: ["https://explorer-studio.genlayer.com"]
+                }]
+            });
+        }
 
+        // CONNECT WALLET
         await provider.send("eth_requestAccounts", []);
 
         signer = provider.getSigner();
