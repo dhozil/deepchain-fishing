@@ -648,15 +648,31 @@ async function readContract(fn, args = []) {
 
 async function writeContract(fn, args) {
   if (!window.ethereum) throw new Error("MetaMask not found")
-  const txHash = await window.ethereum.request({
-    method:"eth_sendTransaction",
-    params:[{
-      from: userAddress,
-      to: CONTRACT_ADDRESS,
-      data: JSON.stringify({function:fn, args})
-    }]
-  })
-  return txHash
+  
+  try {
+    // Encode function call properly for GenLayer
+    const functionData = {
+      function: fn,
+      args: args
+    }
+    
+    console.log('Sending transaction:', functionData)
+    
+    const txHash = await window.ethereum.request({
+      method:"eth_sendTransaction",
+      params:[{
+        from: userAddress,
+        to: CONTRACT_ADDRESS,
+        data: JSON.stringify(functionData)
+      }]
+    })
+    
+    console.log('Transaction hash:', txHash)
+    return txHash
+  } catch (error) {
+    console.error('Transaction error:', error)
+    throw error
+  }
 }
 
 // ── GAME LOGIC ───────────────────────────────────────────────────────────────
