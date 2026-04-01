@@ -2,145 +2,119 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>GenLayer Fishing Game</title>
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+<title>Fishing Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+/* FULL BACKGROUND */
 body {
-    margin:0;
-    font-family: Arial;
-    background:url('banner.png') no-repeat center/cover;
+    background: url('banner.png') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* DARK OVERLAY */
+.overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.35);
+    top: 0;
+    left: 0;
+}
+
+/* CONNECT BUTTON */
 #walletBtn {
-    position:absolute;
-    top:20px;
-    right:20px;
-    padding:10px;
-    background:#00cfff;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
 }
 
+/* CENTER BOX */
 .center-box {
-    position:absolute;
-    top:75%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    background:rgba(0,0,0,0.7);
-    padding:20px;
-    border-radius:10px;
-    color:white;
-    text-align:center;
+    position: relative;
+    background: rgba(0,0,0,0.75);
+    padding: 30px;
+    border-radius: 16px;
+    text-align: center;
+    width: 340px;
+    z-index: 5;
 }
 
+/* TITLE */
+.center-box h2 {
+    color: white;
+    font-size: 26px;
+    margin-bottom: 10px;
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+/* BUTTON */
+button {
+    margin-top: 15px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* GAME UI */
 #gameUI {
-    display:none;
-    position:absolute;
-    bottom:0;
-    width:100%;
-    background:rgba(0,0,0,0.85);
-    color:white;
-    padding:20px;
+    display: none;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 20px;
+    text-align: center;
 }
 </style>
 </head>
 
 <body>
 
+<div class="overlay"></div>
+
 <button id="walletBtn">Connect Wallet</button>
 
 <div class="center-box">
     <h2>🎣 Fishing Game</h2>
-    <input id="nickname" placeholder="Enter nickname"><br>
-    <button onclick="startGame()">Start Game</button>
+    <input placeholder="Enter nickname">
+    <button>Start Game</button>
 </div>
 
 <div id="gameUI">
-    <div id="playerInfo"></div>
-    <button onclick="cast()">🎣 Cast</button>
-    <div id="result"></div>
+    Game UI here
 </div>
-
-<script>
-
-const CONTRACT = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
-const RPC = "https://studio.genlayer.com/api";
-
-let userAddress;
-
-async function connectWallet(){
-    try{
-        if(!window.ethereum){
-            alert("Install MetaMask");
-            return;
-        }
-
-        const accounts = await window.ethereum.request({
-            method:"eth_requestAccounts"
-        });
-
-        userAddress = accounts[0];
-
-        document.getElementById("walletBtn").innerText =
-            userAddress.slice(0,6)+"..."+userAddress.slice(-4);
-
-    }catch(e){
-        console.error(e);
-        alert("Connection failed");
-    }
-}
-
-document.getElementById("walletBtn").onclick = connectWallet;
-
-async function callRPC(method, params=[]){
-    const res = await fetch(RPC,{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({
-            jsonrpc:"2.0",
-            id:1,
-            method,
-            params
-        })
-    });
-
-    return await res.json();
-}
-
-async function startGame(){
-    if(!userAddress){
-        alert("Connect wallet first!");
-        return;
-    }
-
-    const name = document.getElementById("nickname").value;
-    if(!name){
-        alert("Enter nickname!");
-        return;
-    }
-
-    document.querySelector(".center-box").style.display="none";
-    document.getElementById("gameUI").style.display="block";
-
-    document.getElementById("playerInfo").innerText =
-        "Player: "+name;
-}
-
-async function cast(){
-    document.getElementById("result").innerText="Casting...";
-
-    // ⚠️ SIMULASI dulu (karena GenLayer TX tidak bisa langsung dari frontend ethers)
-    setTimeout(()=>{
-        const fishes = ["Sardine","Tuna","Shark","Golden Koi"];
-        const pick = fishes[Math.floor(Math.random()*fishes.length)];
-        document.getElementById("result").innerText =
-            "You caught "+pick+"!";
-    },1000);
-}
-
-</script>
 
 </body>
 </html>
