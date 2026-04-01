@@ -897,14 +897,16 @@ async function handleRegister() {
     showTx(hash)
     
     // Wait for transaction confirmation then refresh stats
-  let attempts = 0
-  const maxAttempts = 20
+let attempts = 0
+const maxAttempts = 20
 
-  const checkRegistered = async () => {
-    attempts++
-    await fetchStats()
+const checkRegistered = async () => {
+  attempts++
+  await fetchStats()
 
-    if (playerStats?.name && playerStats.name !== "Unknown") {
+  console.log("Checking registration:", playerStats)
+
+  if (playerStats?.name && playerStats.name !== "Unknown" && playerStats.name !== "") {
     showStatus("Registration success!", "success")
     return
   }
