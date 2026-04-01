@@ -3,221 +3,180 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DeepChain Fishing 🎣</title>
+<title>GenLayer Fishing Game</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Crimson+Pro:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-:root {
-  --bg:#010610;
-  --card:#0a1628;
-  --cyan:#00d4ff;
-  --teal:#00ffcc;
-  --gold:#ffd700;
-  --text:#e6f4ff;
-  --dim:#7fa3c2;
-}
-
-body{
+body {
   margin:0;
-  font-family:'Crimson Pro',serif;
-  background:radial-gradient(circle at top,#081a30,#010610);
-  color:var(--text);
-  font-size:19px;
+  font-family: 'Inter', sans-serif;
+  background: radial-gradient(circle at top, #0a1a2f, #020817);
+  color:#e6f0ff;
 }
 
 /* HEADER */
-.header{
-  text-align:center;
-  padding:2rem;
+.wallet-bar {
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:999;
 }
-.header h1{
-  font-family:'Cinzel';
-  font-size:3rem;
-  background:linear-gradient(45deg,var(--cyan),var(--gold));
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.header p{color:var(--dim)}
 
-/* BUTTON */
-.btn{
-  border:2px solid var(--teal);
-  padding:1rem 2.5rem;
-  font-size:1.2rem;
-  background:none;
-  color:var(--teal);
+.btn {
+  padding:10px 18px;
+  border:1px solid #00d4ff;
+  background:transparent;
+  color:#00d4ff;
   cursor:pointer;
-  border-radius:10px;
+  border-radius:6px;
+  font-weight:600;
 }
-.btn:hover{
-  background:var(--teal);
-  color:#000;
-  box-shadow:0 0 25px var(--teal);
-}
-
-/* CARD */
-.card{
-  background:rgba(10,22,40,0.85);
-  border-radius:14px;
-  padding:1.5rem;
-  border:1px solid rgba(0,212,255,0.2);
+.btn:hover {
+  background:#00d4ff;
+  color:#001018;
 }
 
-/* GRID */
-.grid{
-  max-width:1100px;
-  margin:auto;
-  display:grid;
-  grid-template-columns:1fr 320px;
-  gap:1.5rem;
-}
-@media(max-width:900px){
-  .grid{grid-template-columns:1fr}
-}
-
-/* WATER */
-.water{
-  height:200px;
-  border-radius:12px;
-  background:linear-gradient(#0a2a50,#021020);
+/* CENTER SCREEN */
+.center-screen {
+  height:100vh;
   display:flex;
-  align-items:center;
+  flex-direction:column;
   justify-content:center;
-  font-size:3rem;
+  align-items:center;
+  text-align:center;
+  gap:20px;
+}
+
+.banner {
+  width:100%;
+  max-width:700px;
+  border-radius:14px;
+  box-shadow:0 0 60px rgba(0,212,255,0.3);
   transition:0.3s;
 }
-
-/* ANIMATIONS */
-@keyframes castAnim {
-  0% { transform: translateY(0) }
-  50% { transform: translateY(-10px) }
-  100% { transform: translateY(0) }
+.banner:hover {
+  transform:scale(1.02);
 }
-.casting { animation: castAnim 0.6s infinite; }
 
-@keyframes shake {
-  0% { transform: translateX(0) }
-  25% { transform: translateX(-5px) }
-  50% { transform: translateX(5px) }
-  75% { transform: translateX(-5px) }
-  100% { transform: translateX(0) }
+h2 {
+  font-family:'Cinzel', serif;
+  font-size:2rem;
 }
-.strike { animation: shake 0.5s; }
 
-/* PROGRESS BAR */
-.bar{
-  width:100%;
-  height:10px;
-  background:#001;
-  margin-top:1rem;
+input {
+  padding:10px;
+  border-radius:6px;
+  border:1px solid #00d4ff;
+  background:#021020;
+  color:white;
+}
+
+/* GAME */
+.hidden { display:none }
+
+.game {
+  max-width:1100px;
+  margin:120px auto;
+}
+
+.stats {
+  display:flex;
+  gap:20px;
+  justify-content:center;
+  margin-bottom:20px;
+}
+
+.card {
+  background:#04152a;
+  padding:15px;
   border-radius:10px;
-  overflow:hidden;
+  border:1px solid #0af;
 }
-.bar-fill{
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,var(--cyan),var(--teal));
-  transition:width 0.2s;
+
+.cast-btn {
+  font-size:18px;
+  padding:15px 30px;
+  margin-top:20px;
+}
+
+/* SHOP */
+.shop {
+  margin-top:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.shop-item {
+  display:flex;
+  justify-content:space-between;
+  background:#021020;
+  padding:10px;
+  border-radius:6px;
 }
 
 /* RESULT */
-.result{
-  text-align:center;
-  margin-top:1rem;
-  font-size:1.5rem;
-}
-.legendary{color:var(--gold)}
-.rare{color:#a855f7}
-.uncommon{color:#22c55e}
-
-/* INPUT */
-input{
-  padding:0.7rem;
-  font-size:1rem;
-  border-radius:8px;
-  border:1px solid var(--cyan);
-  background:#000;
-  color:#fff;
-}
-
-/* LIST */
-.list{margin-top:1rem}
-.list div{
-  padding:0.4rem;
-  border-bottom:1px solid #123;
+.result {
+  margin-top:20px;
+  font-size:20px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-  <h1>⚓ DeepChain Fishing</h1>
-  <p>On-chain fishing game</p>
-</div>
-
-<div id="connect" style="text-align:center">
+<!-- CONNECT -->
+<div class="wallet-bar">
   <button class="btn" onclick="connect()">Connect Wallet</button>
 </div>
 
-<div id="register" style="display:none;text-align:center">
-  <h2>Choose Name</h2>
-  <input id="name" placeholder="your name"/>
-  <br><br>
-  <button class="btn" onclick="register()">Start Fishing</button>
+<!-- HERO -->
+<div class="center-screen" id="hero">
+  <img src="banner.png" class="banner">
+
+  <h2>On-chain Fishing Game</h2>
+  <p>For GenLayer Community</p>
+
+  <button class="btn" onclick="connect()">Start Fishing</button>
 </div>
 
-<div id="game" style="display:none" class="grid">
-
-  <div>
-    <div class="card">
-      <div class="water" id="water">🌊</div>
-      <button class="btn" onclick="cast()">🎣 Cast</button>
-      <div class="bar"><div class="bar-fill" id="bar"></div></div>
-      <div class="result" id="result"></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <h3>Stats</h3>
-    <p>Balance: <span id="bal">0</span></p>
-    <p>Total: <span id="tot">0</span></p>
-
-    <h3>Leaderboard</h3>
-    <div id="lb" class="list"></div>
-  </div>
-
+<!-- REGISTER -->
+<div class="center-screen hidden" id="register">
+  <h2>Choose Your Name</h2>
+  <input id="nameInput" placeholder="Your name">
+  <button class="btn" onclick="register()">Register</button>
 </div>
 
-<!-- SOUND -->
-<audio id="splash" src="https://assets.mixkit.co/sfx/preview/mixkit-water-splash-1182.mp3"></audio>
-<audio id="reel" src="https://assets.mixkit.co/sfx/preview/mixkit-fishing-reel-707.mp3"></audio>
-<audio id="success" src="https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3"></audio>
-<audio id="fail" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3"></audio>
+<!-- GAME -->
+<div class="game hidden" id="game">
+
+  <div class="stats">
+    <div class="card">Balance: <span id="balance">0</span></div>
+    <div class="card">Total: <span id="total">0</span></div>
+    <div class="card">Casts: <span id="casts">0</span></div>
+  </div>
+
+  <div style="text-align:center">
+    <button class="btn cast-btn" onclick="cast()">🎣 CAST</button>
+  </div>
+
+  <div class="result" id="result"></div>
+
+  <!-- SHOP -->
+  <div class="shop" id="shop"></div>
+
+</div>
 
 <script>
-const CONTRACT="0xA258E47F6A2D3CAf0469127677E5963093fbCA62"
-const RPC="https://studio.genlayer.com/api"
+const CONTRACT = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62"
+const RPC = "https://studio.genlayer.com/api"
 
-let addr=null
+let user = null
+let stats = null
 
-function play(id){
-  const a=document.getElementById(id)
-  if(a){
-    a.currentTime=0
-    a.play().catch(()=>{})
-  }
-}
-
-async function connect(){
-  const a=await ethereum.request({method:"eth_requestAccounts"})
-  addr=a[0]
-  load()
-}
-
-async function call(fn,args=[]){
-  const r=await fetch(RPC,{
+async function rpcCall(fn, args=[]) {
+  const res = await fetch(RPC,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
@@ -227,100 +186,108 @@ async function call(fn,args=[]){
       id:1
     })
   })
-  return (await r.json()).result
+  const j = await res.json()
+  return JSON.parse(j.result)
 }
 
-async function tx(fn,args){
-  const data=JSON.stringify({function:fn,args})
-  let hex="0x"
+async function sendTx(fn,args) {
+  const data = JSON.stringify({function:fn,args})
+  let hex = "0x"
   for(let i=0;i<data.length;i++){
-    hex+=data.charCodeAt(i).toString(16)
+    hex += data.charCodeAt(i).toString(16)
   }
-  return ethereum.request({
+  return await ethereum.request({
     method:"eth_sendTransaction",
-    params:[{from:addr,to:CONTRACT,data:hex}]
+    params:[{from:user,to:CONTRACT,data:hex}]
   })
 }
 
-async function load(){
-  document.getElementById("connect").style.display="none"
-  const s=JSON.parse(await call("get_stats",[addr]))
+async function connect(){
+  const acc = await ethereum.request({method:"eth_requestAccounts"})
+  user = acc[0]
 
-  if(!s.name || s.name==="Unknown"){
-    document.getElementById("register").style.display="block"
-  }else{
-    startGame()
+  document.getElementById("hero").classList.add("hidden")
+
+  await load()
+}
+
+async function load(){
+  try{
+    stats = await rpcCall("get_stats",[user])
+    if(!stats.name || stats.name==="Unknown"){
+      document.getElementById("register").classList.remove("hidden")
+    } else {
+      startGame()
+    }
+  }catch{
+    document.getElementById("register").classList.remove("hidden")
   }
 }
 
 async function register(){
-  const n=document.getElementById("name").value
-  await tx("register",[n])
+  const name = document.getElementById("nameInput").value
+  await sendTx("register",[name])
   setTimeout(startGame,4000)
 }
 
-async function startGame(){
-  document.getElementById("register").style.display="none"
-  document.getElementById("game").style.display="grid"
-  update()
-  leaderboard()
+function startGame(){
+  document.getElementById("register").classList.add("hidden")
+  document.getElementById("game").classList.remove("hidden")
+  refresh()
 }
 
-async function update(){
-  const s=JSON.parse(await call("get_stats",[addr]))
-  document.getElementById("bal").innerText=s.balance
-  document.getElementById("tot").innerText=s.total_earned
-}
+async function refresh(){
+  stats = await rpcCall("get_stats",[user])
+  document.getElementById("balance").innerText = stats.balance
+  document.getElementById("total").innerText = stats.total_earned
+  document.getElementById("casts").innerText = stats.total_casts
 
-async function leaderboard(){
-  const l=JSON.parse(await call("get_leaderboard",[]))
-  document.getElementById("lb").innerHTML=
-    l.map(x=>`<div>${x.name}: ${x.points}</div>`).join("")
+  renderShop()
 }
 
 async function cast(){
-  const bar=document.getElementById("bar")
-  const water=document.getElementById("water")
-
-  let p=0
-
-  water.classList.add("casting")
-  play("reel")
-
-  const interval=setInterval(()=>{
-    p+=8
-    bar.style.width=p+"%"
-    if(p>=100)clearInterval(interval)
-  },150)
-
-  await tx("cast",[])
+  document.getElementById("result").innerText="Casting..."
+  await sendTx("cast",[])
 
   setTimeout(async ()=>{
-    water.classList.remove("casting")
-    water.classList.add("strike")
-    play("splash")
-
-    const s=JSON.parse(await call("get_stats",[addr]))
-    const c=s.recent_catches.at(-1)
-
-    const el=document.getElementById("result")
-    el.className="result "+c.rarity
-
-    if(c.fish==="empty"){
-      el.innerText="💨 Nothing..."
-      play("fail")
-    }else{
-      el.innerText=`${c.fish} +${c.points}`
-      play("success")
-    }
-
-    update()
-    leaderboard()
-
-    bar.style.width="0%"
-    setTimeout(()=>water.classList.remove("strike"),500)
-
+    await refresh()
+    const last = stats.recent_catches.slice(-1)[0]
+    document.getElementById("result").innerText =
+      last.fish==="empty"
+      ? "Nothing..."
+      : `You caught ${last.fish} (+${last.points})`
   },4000)
+}
+
+function renderShop(){
+  const el = document.getElementById("shop")
+  el.innerHTML = `
+    <h3>Shop</h3>
+
+    <div class="shop-item">
+      Bamboo Rod (Free)
+    </div>
+
+    <div class="shop-item">
+      Platinum Rod - 50
+      <button onclick="buyRod('platinum')">Buy</button>
+    </div>
+
+    <div class="shop-item">
+      Worm - 10
+      <button onclick="buyBait('worm')">Buy</button>
+    </div>
+  `
+}
+
+async function buyRod(r){
+  await sendTx("buy_rod",[r])
+  setTimeout(refresh,4000)
+}
+
+async function buyBait(b){
+  await sendTx("buy_bait",[b])
+  setTimeout(refresh,4000)
 }
 </script>
 
