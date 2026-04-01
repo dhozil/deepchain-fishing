@@ -2,266 +2,325 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>DeepChain Fishing 🎣</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeepChain Fishing 🎣</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Crimson+Pro:wght@300;400&display=swap" rel="stylesheet">
 
 <style>
+:root {
+  --bg:#010610;
+  --card:#0a1628;
+  --cyan:#00d4ff;
+  --teal:#00ffcc;
+  --gold:#ffd700;
+  --text:#e6f4ff;
+  --dim:#7fa3c2;
+}
+
 body{
   margin:0;
-  font-family:Arial;
-  background:#020818;
-  color:#c8e0f0;
+  font-family:'Crimson Pro',serif;
+  background:radial-gradient(circle at top,#081a30,#010610);
+  color:var(--text);
+  font-size:19px;
+}
+
+/* HEADER */
+.header{
   text-align:center;
+  padding:2rem;
 }
-
-h1{
-  margin-top:20px;
-  color:#00d4ff;
+.header h1{
+  font-family:'Cinzel';
+  font-size:3rem;
+  background:linear-gradient(45deg,var(--cyan),var(--gold));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
 }
+.header p{color:var(--dim)}
 
-button{
-  padding:10px 20px;
-  margin:5px;
+/* BUTTON */
+.btn{
+  border:2px solid var(--teal);
+  padding:1rem 2.5rem;
+  font-size:1.2rem;
+  background:none;
+  color:var(--teal);
   cursor:pointer;
-  border:none;
-  border-radius:6px;
+  border-radius:10px;
 }
-
-#castBtn{
-  background:#00ffcc;
+.btn:hover{
+  background:var(--teal);
   color:#000;
-  font-size:18px;
+  box-shadow:0 0 25px var(--teal);
 }
 
-#log{
-  margin-top:20px;
-  white-space:pre-wrap;
-  font-size:14px;
+/* CARD */
+.card{
+  background:rgba(10,22,40,0.85);
+  border-radius:14px;
+  padding:1.5rem;
+  border:1px solid rgba(0,212,255,0.2);
 }
 
-input{
-  padding:8px;
-  width:200px;
+/* GRID */
+.grid{
+  max-width:1100px;
+  margin:auto;
+  display:grid;
+  grid-template-columns:1fr 320px;
+  gap:1.5rem;
+}
+@media(max-width:900px){
+  .grid{grid-template-columns:1fr}
 }
 
-/* 🎨 EFFECTS */
-.legendary-flash{
-  animation:legend 0.6s;
-}
-@keyframes legend{
-  0%{background:gold}
-  100%{background:#020818}
-}
-
-.rare-glow{
-  box-shadow:0 0 20px purple;
-}
-
-.uncommon-glow{
-  box-shadow:0 0 20px green;
-}
-
+/* WATER */
 .water{
-  height:150px;
-  background:linear-gradient(#0a1628,#000);
-  margin:20px;
-  border-radius:10px;
-  position:relative;
-}
-
-.shake{
-  animation:shake 0.5s;
-}
-@keyframes shake{
-  0%{transform:translateX(0)}
-  25%{transform:translateX(5px)}
-  50%{transform:translateX(-5px)}
-  75%{transform:translateX(5px)}
-  100%{transform:translateX(0)}
-}
-
-/* popup */
-#popup{
-  position:fixed;
-  top:0;
-  left:0;
-  right:0;
-  bottom:0;
-  background:rgba(0,0,0,0.8);
-  display:none;
-  justify-content:center;
+  height:200px;
+  border-radius:12px;
+  background:linear-gradient(#0a2a50,#021020);
+  display:flex;
   align-items:center;
+  justify-content:center;
+  font-size:3rem;
+  transition:0.3s;
 }
 
-#popupBox{
-  background:#111;
-  padding:20px;
+/* ANIMATIONS */
+@keyframes castAnim {
+  0% { transform: translateY(0) }
+  50% { transform: translateY(-10px) }
+  100% { transform: translateY(0) }
+}
+.casting { animation: castAnim 0.6s infinite; }
+
+@keyframes shake {
+  0% { transform: translateX(0) }
+  25% { transform: translateX(-5px) }
+  50% { transform: translateX(5px) }
+  75% { transform: translateX(-5px) }
+  100% { transform: translateX(0) }
+}
+.strike { animation: shake 0.5s; }
+
+/* PROGRESS BAR */
+.bar{
+  width:100%;
+  height:10px;
+  background:#001;
+  margin-top:1rem;
   border-radius:10px;
+  overflow:hidden;
+}
+.bar-fill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--cyan),var(--teal));
+  transition:width 0.2s;
+}
+
+/* RESULT */
+.result{
+  text-align:center;
+  margin-top:1rem;
+  font-size:1.5rem;
+}
+.legendary{color:var(--gold)}
+.rare{color:#a855f7}
+.uncommon{color:#22c55e}
+
+/* INPUT */
+input{
+  padding:0.7rem;
+  font-size:1rem;
+  border-radius:8px;
+  border:1px solid var(--cyan);
+  background:#000;
+  color:#fff;
+}
+
+/* LIST */
+.list{margin-top:1rem}
+.list div{
+  padding:0.4rem;
+  border-bottom:1px solid #123;
 }
 </style>
 </head>
 
 <body>
 
-<h1>🎣 DeepChain Fishing</h1>
-
-<button onclick="connect()">Connect Wallet</button>
-<button onclick="openRename()">✏️ Change Name</button>
-
-<br><br>
-
-<input id="nameInput" placeholder="Your name">
-<button onclick="register()">Begin Fishing</button>
-
-<div class="water" id="water"></div>
-
-<button id="castBtn" onclick="cast()">🎣 Cast Line</button>
-
-<div id="log"></div>
-
-<!-- POPUP -->
-<div id="popup">
-  <div id="popupBox">
-    <h3>Change Name</h3>
-    <input id="newName">
-    <br><br>
-    <button onclick="saveName()">Save</button>
-    <button onclick="closePopup()">Cancel</button>
-  </div>
+<div class="header">
+  <h1>⚓ DeepChain Fishing</h1>
+  <p>On-chain fishing game</p>
 </div>
 
+<div id="connect" style="text-align:center">
+  <button class="btn" onclick="connect()">Connect Wallet</button>
+</div>
+
+<div id="register" style="display:none;text-align:center">
+  <h2>Choose Name</h2>
+  <input id="name" placeholder="your name"/>
+  <br><br>
+  <button class="btn" onclick="register()">Start Fishing</button>
+</div>
+
+<div id="game" style="display:none" class="grid">
+
+  <div>
+    <div class="card">
+      <div class="water" id="water">🌊</div>
+      <button class="btn" onclick="cast()">🎣 Cast</button>
+      <div class="bar"><div class="bar-fill" id="bar"></div></div>
+      <div class="result" id="result"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Stats</h3>
+    <p>Balance: <span id="bal">0</span></p>
+    <p>Total: <span id="tot">0</span></p>
+
+    <h3>Leaderboard</h3>
+    <div id="lb" class="list"></div>
+  </div>
+
+</div>
+
+<!-- SOUND -->
+<audio id="splash" src="https://assets.mixkit.co/sfx/preview/mixkit-water-splash-1182.mp3"></audio>
+<audio id="reel" src="https://assets.mixkit.co/sfx/preview/mixkit-fishing-reel-707.mp3"></audio>
+<audio id="success" src="https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3"></audio>
+<audio id="fail" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3"></audio>
+
 <script>
-const CONTRACT_ADDRESS = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62"
-const RPC = "https://studio.genlayer.com/api"
+const CONTRACT="0xA258E47F6A2D3CAf0469127677E5963093fbCA62"
+const RPC="https://studio.genlayer.com/api"
 
-let user=null
+let addr=null
 
-function log(msg){
-  document.getElementById("log").textContent=msg
+function play(id){
+  const a=document.getElementById(id)
+  if(a){
+    a.currentTime=0
+    a.play().catch(()=>{})
+  }
 }
 
 async function connect(){
-  const acc=await ethereum.request({method:"eth_requestAccounts"})
-  user=acc[0]
-  log("Connected: "+user)
+  const a=await ethereum.request({method:"eth_requestAccounts"})
+  addr=a[0]
+  load()
 }
 
-async function read(fn,args=[]){
+async function call(fn,args=[]){
   const r=await fetch(RPC,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       jsonrpc:"2.0",
       method:"gen_call",
-      params:[{to:CONTRACT_ADDRESS,data:{function:fn,args}}, "latest"],
+      params:[{to:CONTRACT,data:{function:fn,args}}, "latest"],
       id:1
     })
   })
-  const d=await r.json()
-  return d.result
+  return (await r.json()).result
 }
 
-async function write(fn,args){
+async function tx(fn,args){
   const data=JSON.stringify({function:fn,args})
   let hex="0x"
   for(let i=0;i<data.length;i++){
     hex+=data.charCodeAt(i).toString(16)
   }
-
-  return await ethereum.request({
+  return ethereum.request({
     method:"eth_sendTransaction",
-    params:[{
-      from:user,
-      to:CONTRACT_ADDRESS,
-      data:hex
-    }]
+    params:[{from:addr,to:CONTRACT,data:hex}]
   })
 }
 
-async function register(){
-  const name=document.getElementById("nameInput").value
-  log("Registering...")
+async function load(){
+  document.getElementById("connect").style.display="none"
+  const s=JSON.parse(await call("get_stats",[addr]))
 
-  await write("register",[name])
-
-  await waitStats()
+  if(!s.name || s.name==="Unknown"){
+    document.getElementById("register").style.display="block"
+  }else{
+    startGame()
+  }
 }
 
-async function saveName(){
-  const name=document.getElementById("newName").value
-  await write("register",[name])
-  closePopup()
-  await waitStats()
+async function register(){
+  const n=document.getElementById("name").value
+  await tx("register",[n])
+  setTimeout(startGame,4000)
+}
+
+async function startGame(){
+  document.getElementById("register").style.display="none"
+  document.getElementById("game").style.display="grid"
+  update()
+  leaderboard()
+}
+
+async function update(){
+  const s=JSON.parse(await call("get_stats",[addr]))
+  document.getElementById("bal").innerText=s.balance
+  document.getElementById("tot").innerText=s.total_earned
+}
+
+async function leaderboard(){
+  const l=JSON.parse(await call("get_leaderboard",[]))
+  document.getElementById("lb").innerHTML=
+    l.map(x=>`<div>${x.name}: ${x.points}</div>`).join("")
 }
 
 async function cast(){
+  const bar=document.getElementById("bar")
   const water=document.getElementById("water")
-  water.classList.add("shake")
 
-  log("Casting...")
+  let p=0
 
-  await write("cast",[])
+  water.classList.add("casting")
+  play("reel")
 
-  await waitCatch()
+  const interval=setInterval(()=>{
+    p+=8
+    bar.style.width=p+"%"
+    if(p>=100)clearInterval(interval)
+  },150)
 
-  water.classList.remove("shake")
-}
+  await tx("cast",[])
 
-async function waitStats(){
-  for(let i=0;i<30;i++){
-    await sleep(1000)
-    const raw=await read("get_stats",[user])
-    const s=JSON.parse(raw)
+  setTimeout(async ()=>{
+    water.classList.remove("casting")
+    water.classList.add("strike")
+    play("splash")
 
-    if(s.name && s.name!=="Unknown"){
-      log("Welcome "+s.name)
-      return
+    const s=JSON.parse(await call("get_stats",[addr]))
+    const c=s.recent_catches.at(-1)
+
+    const el=document.getElementById("result")
+    el.className="result "+c.rarity
+
+    if(c.fish==="empty"){
+      el.innerText="💨 Nothing..."
+      play("fail")
+    }else{
+      el.innerText=`${c.fish} +${c.points}`
+      play("success")
     }
-  }
-  log("Timeout but maybe success")
-}
 
-async function waitCatch(){
-  for(let i=0;i<40;i++){
-    await sleep(1000)
-    const raw=await read("get_stats",[user])
-    const s=JSON.parse(raw)
+    update()
+    leaderboard()
 
-    if(s.recent_catches.length){
-      const c=s.recent_catches[s.recent_catches.length-1]
-      showCatch(c)
-      return
-    }
-  }
-  log("No result yet")
-}
+    bar.style.width="0%"
+    setTimeout(()=>water.classList.remove("strike"),500)
 
-function showCatch(c){
-  const body=document.body
-
-  if(c.rarity==="legendary"){
-    body.classList.add("legendary-flash")
-    setTimeout(()=>body.classList.remove("legendary-flash"),600)
-  }
-
-  if(c.rarity==="rare"){
-    document.getElementById("water").classList.add("rare-glow")
-  }
-
-  if(c.rarity==="uncommon"){
-    document.getElementById("water").classList.add("uncommon-glow")
-  }
-
-  log("🎣 "+c.fish+" | "+c.points+" pts")
-}
-
-function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
-
-function openRename(){
-  document.getElementById("popup").style.display="flex"
-}
-function closePopup(){
-  document.getElementById("popup").style.display="none"
+  },4000)
 }
 </script>
 
