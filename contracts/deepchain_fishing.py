@@ -91,8 +91,11 @@ class FishingGame(gl.Contract):
     @gl.public.write
     def register(self, name: str) -> None:
         address = str(gl.message.sender_address)
-        self.player_names[address] = name
         player = self._get_player(address)
+
+        # simpan nama langsung di player
+        player["name"] = name
+
         self._save_player(address, player)
 
     @gl.public.write
@@ -172,7 +175,7 @@ class FishingGame(gl.Contract):
     @gl.public.view
     def get_stats(self, address: str) -> str:
         player = self._get_player(address)
-        name = self.player_names.get(address, "Unknown")
+        name = player.get("name", "Unknown")
         return json.dumps({
             "name": name,
             "balance": int(player["balance"]),
