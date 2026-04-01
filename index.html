@@ -13,22 +13,18 @@ html, body {
     font-family: Arial, sans-serif;
 }
 
-/* FULL BACKGROUND */
+/* BACKGROUND */
 body {
     background: url('banner.png') no-repeat center center;
     background-size: cover;
-    display: flex;
-    align-items: flex-start; /* 🔥 ubah ke atas */
-    justify-content: center;
-    padding-top: 200px; /* 🔥 jarak dari atas (AMAN dari tulisan) */
 }
 
-/* DARK OVERLAY */
+/* OVERLAY */
 .overlay {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.35);
+    background: rgba(0,0,0,0.25);
     top: 0;
     left: 0;
 }
@@ -39,7 +35,7 @@ body {
     top: 20px;
     right: 20px;
     padding: 12px 20px;
-    border-radius: 10px;
+    border-radius: 12px;
     border: none;
     background: #00cfff;
     font-weight: bold;
@@ -47,35 +43,38 @@ body {
     z-index: 10;
 }
 
-/* CENTER BOX */
+/* 🎯 MAIN BOX (INI KUNCI NYA) */
 .center-box {
-    position: relative;
-    background: rgba(0,0,0,0.75);
+    position: absolute;
+    top: 58%; /* 🔥 posisi turun dari tengah */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    background: rgba(0,0,0,0.65);
     padding: 30px;
-    border-radius: 16px;
+    border-radius: 18px;
     text-align: center;
     width: 340px;
     z-index: 5;
 
-    /* 🔥 BONUS biar lebih modern */
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
 }
 
 /* TITLE */
 .center-box h2 {
     color: white;
-    font-size: 26px;
-    margin-bottom: 10px;
+    font-size: 24px;
+    margin-bottom: 15px;
 }
 
 /* INPUT */
 input {
     width: 100%;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: none;
     margin-top: 10px;
-    font-size: 16px;
+    font-size: 15px;
 }
 
 /* BUTTON */
@@ -102,7 +101,7 @@ button {
     text-align: center;
 }
 
-/* STATUS MESSAGE */
+/* STATUS */
 #status {
     position: absolute;
     top: 70px;
@@ -136,18 +135,17 @@ button {
 
 <div id="status"></div>
 
+<!-- 🎯 BOX UTAMA -->
 <div class="center-box">
     <h2>🎣 Fishing Game</h2>
-    <input id="nicknameInput" placeholder="Enter nickname">
+    <input id="nicknameInput" placeholder="Enter your nickname">
     <button id="startBtn">Start Game</button>
 </div>
 
-<div id="gameUI">
-    Game UI here
-</div>
+<div id="gameUI"></div>
 
 <script>
-// CONFIGURATION
+// CONFIG
 const STUDIONET_CHAIN_ID = "0xF22F";
 const RPC_URL = "https://studio.genlayer.com/api";
 
@@ -155,7 +153,7 @@ const RPC_URL = "https://studio.genlayer.com/api";
 let userAddress = null;
 let isConnected = false;
 
-// UI ELEMENTS
+// ELEMENTS
 const walletBtn = document.getElementById('walletBtn');
 const startBtn = document.getElementById('startBtn');
 const nicknameInput = document.getElementById('nicknameInput');
@@ -169,37 +167,31 @@ function showStatus(message, type = '') {
     status.style.display = 'block';
     
     if (type === 'success') {
-        setTimeout(() => {
-            status.style.display = 'none';
-        }, 3000);
+        setTimeout(() => status.style.display = 'none', 3000);
     }
 }
 
 // WALLET
 async function connectWallet() {
     if (!window.ethereum) {
-        showStatus('MetaMask not found.', 'error');
-        alert('Install MetaMask first.');
+        showStatus('MetaMask not found', 'error');
         return;
     }
     
     try {
-        showStatus('Connecting...');
-        
         const chain = await window.ethereum.request({ method: 'eth_chainId' });
         if (chain !== STUDIONET_CHAIN_ID) {
             await switchToStudioNet();
         }
-        
+
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        
         userAddress = accounts[0];
         isConnected = true;
-        
+
         walletBtn.textContent = `🦊 ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
         walletBtn.style.background = '#44ff44';
+
         showStatus('Connected!', 'success');
-        
     } catch {
         showStatus('Connection failed', 'error');
     }
@@ -214,22 +206,18 @@ async function switchToStudioNet() {
         });
     } catch (e) {
         if (e.code === 4902) {
-            await addStudioNet();
+            await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: STUDIONET_CHAIN_ID,
+                    chainName: "GenLayer Studio",
+                    nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
+                    rpcUrls: [RPC_URL],
+                    blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
+                }]
+            });
         }
     }
-}
-
-async function addStudioNet() {
-    await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-            chainId: STUDIONET_CHAIN_ID,
-            chainName: "GenLayer Studio",
-            nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
-            rpcUrls: [RPC_URL],
-            blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
-        }]
-    });
 }
 
 // GAME
@@ -239,12 +227,12 @@ function startGame() {
         showStatus('Enter nickname', 'error');
         return;
     }
-    
+
     if (!isConnected) {
         showStatus('Connect wallet first', 'error');
         return;
     }
-    
+
     gameUI.style.display = 'block';
     gameUI.innerHTML = `
         <h3>🎣 ${nickname}'s Fishing Game</h3>
