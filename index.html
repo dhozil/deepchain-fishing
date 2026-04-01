@@ -18,8 +18,9 @@ body {
     background: url('banner.png') no-repeat center center;
     background-size: cover;
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* 🔥 ubah ke atas */
     justify-content: center;
+    padding-top: 200px; /* 🔥 jarak dari atas (AMAN dari tulisan) */
 }
 
 /* DARK OVERLAY */
@@ -56,8 +57,8 @@ body {
     width: 340px;
     z-index: 5;
 
-    /* 🔥 FIX: turunin posisi biar gak nutup teks */
-    transform: translateY(90px);
+    /* 🔥 BONUS biar lebih modern */
+    backdrop-filter: blur(8px);
 }
 
 /* TITLE */
@@ -147,7 +148,7 @@ button {
 
 <script>
 // CONFIGURATION
-const STUDIONET_CHAIN_ID = "0xF22F"; // GenLayer Studio
+const STUDIONET_CHAIN_ID = "0xF22F";
 const RPC_URL = "https://studio.genlayer.com/api";
 
 // STATE
@@ -161,7 +162,7 @@ const nicknameInput = document.getElementById('nicknameInput');
 const gameUI = document.getElementById('gameUI');
 const status = document.getElementById('status');
 
-// STATUS FUNCTIONS
+// STATUS
 function showStatus(message, type = '') {
     status.textContent = message;
     status.className = type;
@@ -174,7 +175,7 @@ function showStatus(message, type = '') {
     }
 }
 
-// WALLET CONNECTION
+// WALLET
 async function connectWallet() {
     if (!window.ethereum) {
         showStatus('MetaMask not found.', 'error');
@@ -183,11 +184,10 @@ async function connectWallet() {
     }
     
     try {
-        showStatus('Connecting wallet...');
+        showStatus('Connecting...');
         
-        const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-        
-        if (currentChainId !== STUDIONET_CHAIN_ID) {
+        const chain = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chain !== STUDIONET_CHAIN_ID) {
             await switchToStudioNet();
         }
         
@@ -196,21 +196,21 @@ async function connectWallet() {
         userAddress = accounts[0];
         isConnected = true;
         
-        walletBtn.textContent = `🦊 ${userAddress.substring(0, 6)}...${userAddress.slice(-4)}`;
+        walletBtn.textContent = `🦊 ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
         walletBtn.style.background = '#44ff44';
-        showStatus('Wallet connected!', 'success');
+        showStatus('Connected!', 'success');
         
-    } catch (error) {
+    } catch {
         showStatus('Connection failed', 'error');
     }
 }
 
-// NETWORK SWITCHING
+// NETWORK
 async function switchToStudioNet() {
     try {
-        await window.ethereum.request({ 
-            method: "wallet_switchEthereumChain", 
-            params: [{ chainId: STUDIONET_CHAIN_ID }] 
+        await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: STUDIONET_CHAIN_ID }]
         });
     } catch (e) {
         if (e.code === 4902) {
@@ -232,7 +232,7 @@ async function addStudioNet() {
     });
 }
 
-// GAME FUNCTIONS
+// GAME
 function startGame() {
     const nickname = nicknameInput.value.trim();
     if (!nickname) {
@@ -262,7 +262,6 @@ function castLine() {
 // EVENTS
 walletBtn.addEventListener('click', connectWallet);
 startBtn.addEventListener('click', startGame);
-
 </script>
 
 </body>
