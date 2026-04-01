@@ -13,7 +13,6 @@ html, body {
     font-family: Arial, sans-serif;
 }
 
-/* BACKGROUND */
 body {
     background: url('banner.png') no-repeat center center;
     background-size: cover;
@@ -25,11 +24,9 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.25);
-    top: 0;
-    left: 0;
 }
 
-/* CONNECT BUTTON */
+/* WALLET */
 #walletBtn {
     position: absolute;
     top: 20px;
@@ -38,67 +35,8 @@ body {
     border-radius: 12px;
     border: none;
     background: #00cfff;
-    font-weight: bold;
     cursor: pointer;
     z-index: 10;
-}
-
-/* 🎯 MAIN BOX (INI KUNCI NYA) */
-.center-box {
-    position: absolute;
-    top: 76%; /* 🔥 posisi turun dari tengah */
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    background: rgba(0,0,0,0.65);
-    padding: 30px;
-    border-radius: 18px;
-    text-align: center;
-    width: 340px;
-    z-index: 5;
-
-    backdrop-filter: blur(10px);
-}
-
-/* TITLE */
-.center-box h2 {
-    color: white;
-    font-size: 24px;
-    margin-bottom: 15px;
-}
-
-/* INPUT */
-input {
-    width: 100%;
-    padding: 12px;
-    border-radius: 10px;
-    border: none;
-    margin-top: 10px;
-    font-size: 15px;
-}
-
-/* BUTTON */
-button {
-    margin-top: 15px;
-    padding: 12px 20px;
-    border-radius: 10px;
-    border: none;
-    background: #00cfff;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 16px;
-}
-
-/* GAME UI */
-#gameUI {
-    display: none;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    background: rgba(0,0,0,0.85);
-    color: white;
-    padding: 20px;
-    text-align: center;
 }
 
 /* STATUS */
@@ -108,20 +46,63 @@ button {
     right: 20px;
     padding: 8px 15px;
     border-radius: 8px;
-    background: rgba(255,255,255,0.9);
-    color: #333;
-    font-size: 14px;
-    z-index: 10;
+    background: white;
     display: none;
 }
 
-#status.error {
-    background: #ff4444;
+/* LOGIN */
+.center-box {
+    position: absolute;
+    top: 76%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.65);
+    padding: 30px;
+    border-radius: 18px;
+    color: white;
+    text-align: center;
+}
+
+/* GAME */
+#gameUI {
+    display: none;
+}
+
+canvas {
+    position: absolute;
+}
+
+#hud {
+    position: absolute;
+    top: 10px;
+    left: 10px;
     color: white;
 }
 
-#status.success {
-    background: #44ff44;
+#result {
+    position: absolute;
+    bottom: 140px;
+    width: 100%;
+    text-align: center;
+    font-size: 22px;
+    color: white;
+}
+
+#leaderboard {
+    position: absolute;
+    right: 10px;
+    top: 80px;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    color: white;
+}
+
+#shop {
+    position: absolute;
+    right: 10px;
+    bottom: 80px;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
     color: white;
 }
 </style>
@@ -132,52 +113,60 @@ button {
 <div class="overlay"></div>
 
 <button id="walletBtn">Connect Wallet</button>
-
 <div id="status"></div>
 
-<!-- 🎯 BOX UTAMA -->
 <div class="center-box">
     <h2>🎣 Fishing Game</h2>
     <input id="nicknameInput" placeholder="Enter your nickname">
     <button id="startBtn">Start Game</button>
 </div>
 
-<div id="gameUI"></div>
+<div id="gameUI">
+    <canvas id="canvas"></canvas>
+    <div id="hud"></div>
+    <div id="result"></div>
+    <div id="leaderboard"></div>
+
+    <div id="shop">
+        <b>🛒 Shop</b><br>
+        <button onclick="buyRod()">Upgrade Rod</button><br>
+        <button onclick="buyBait()">Buy Bait (5)</button>
+    </div>
+
+    <button onclick="cast()">🎣 Cast</button>
+</div>
 
 <script>
-// CONFIG
+// ====== CONFIG (PUNYA KAMU) ======
 const STUDIONET_CHAIN_ID = "0xF22F";
 const RPC_URL = "https://studio.genlayer.com/api";
 
-// STATE
+// ====== STATE WALLET ======
 let userAddress = null;
 let isConnected = false;
 
-// ELEMENTS
+// ====== ELEMENT ======
 const walletBtn = document.getElementById('walletBtn');
 const startBtn = document.getElementById('startBtn');
 const nicknameInput = document.getElementById('nicknameInput');
 const gameUI = document.getElementById('gameUI');
 const status = document.getElementById('status');
 
-// STATUS
+// ====== STATUS ======
 function showStatus(message, type = '') {
     status.textContent = message;
     status.className = type;
     status.style.display = 'block';
-    
-    if (type === 'success') {
-        setTimeout(() => status.style.display = 'none', 3000);
-    }
+    setTimeout(()=>status.style.display='none',3000);
 }
 
-// WALLET
+// ====== WALLET ======
 async function connectWallet() {
     if (!window.ethereum) {
         showStatus('MetaMask not found', 'error');
         return;
     }
-    
+
     try {
         const chain = await window.ethereum.request({ method: 'eth_chainId' });
         if (chain !== STUDIONET_CHAIN_ID) {
@@ -197,7 +186,6 @@ async function connectWallet() {
     }
 }
 
-// NETWORK
 async function switchToStudioNet() {
     try {
         await window.ethereum.request({
@@ -220,9 +208,39 @@ async function switchToStudioNet() {
     }
 }
 
-// GAME
+// ====== 🎮 GAME SYSTEM (DITAMBAHKAN) ======
+let nickname = "";
+let tokens = 0;
+let rodLevel = 1;
+let bait = 0;
+let leaderboard = [];
+
+const fishTable = [
+    {name:"🐟 Small Fish", chance:0.25, value:1},
+    {name:"🐠 Sardine", chance:0.2, value:1},
+    {name:"🐡 Anchovy", chance:0.15, value:2},
+    {name:"🐬 Dolphin", chance:0.12, value:5},
+    {name:"🐠 Tuna", chance:0.1, value:4},
+    {name:"🐙 Octopus", chance:0.08, value:6},
+    {name:"🦈 Shark", chance:0.06, value:12},
+    {name:"🐋 Whale", chance:0.03, value:15},
+    {name:"🐉 Sea Dragon", chance:0.008, value:30},
+    {name:"👑 Golden Fish", chance:0.012, value:25}
+];
+
+// CANVAS
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let hookY = 0;
+let casting = false;
+
+// START GAME
 function startGame() {
-    const nickname = nicknameInput.value.trim();
+    nickname = nicknameInput.value.trim();
+
     if (!nickname) {
         showStatus('Enter nickname', 'error');
         return;
@@ -233,18 +251,125 @@ function startGame() {
         return;
     }
 
+    document.querySelector('.center-box').style.display = 'none';
     gameUI.style.display = 'block';
-    gameUI.innerHTML = `
-        <h3>🎣 ${nickname}'s Fishing Game</h3>
-        <button onclick="castLine()">Cast Line</button>
-    `;
+
+    updateHUD();
+    gameLoop();
 }
 
-function castLine() {
-    showStatus('Casting...', 'info');
-    setTimeout(() => {
-        showStatus('Fish caught! 🐟', 'success');
-    }, 2000);
+// HUD
+function updateHUD() {
+    document.getElementById("hud").innerHTML =
+        `👤 ${nickname}<br>🪙 ${tokens}<br>🎣 Lv.${rodLevel}<br>🪱 ${bait}`;
+}
+
+// CAST
+function cast() {
+    if (casting) return;
+
+    casting = true;
+    hookY = 0;
+
+    let speed = 10 + rodLevel * 2;
+
+    let interval = setInterval(()=>{
+        hookY += speed;
+
+        if (hookY > canvas.height/2) {
+            clearInterval(interval);
+            catchFish();
+        }
+    },30);
+}
+
+// CATCH
+function catchFish() {
+    setTimeout(()=>{
+        let rand = Math.random();
+        let cumulative = 0;
+        let fish = fishTable[0];
+
+        for (let f of fishTable) {
+            cumulative += f.chance;
+            if (rand <= cumulative) {
+                fish = f;
+                break;
+            }
+        }
+
+        let bonus = bait > 0 ? 1 : 0;
+        if (bait > 0) bait--;
+
+        let earn = fish.value + bonus;
+        tokens += earn;
+
+        showStatus(`${fish.name} +${earn} 🪙`, 'success');
+
+        casting = false;
+        updateHUD();
+        updateLeaderboard();
+    },1000);
+}
+
+// DRAW
+function gameLoop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.beginPath();
+    ctx.moveTo(canvas.width/2,0);
+    ctx.lineTo(canvas.width/2,hookY);
+    ctx.strokeStyle="white";
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(canvas.width/2,hookY,8,0,Math.PI*2);
+    ctx.fillStyle="red";
+    ctx.fill();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// LEADERBOARD
+function updateLeaderboard(){
+    let p = leaderboard.find(x=>x.name===nickname);
+
+    if(!p) leaderboard.push({name:nickname,score:tokens});
+    else p.score = tokens;
+
+    leaderboard.sort((a,b)=>b.score-a.score);
+
+    let html="<b>🏆 Leaderboard</b><br>";
+    leaderboard.slice(0,5).forEach(p=>{
+        html+=`${p.name}: ${p.score}<br>`;
+    });
+
+    document.getElementById("leaderboard").innerHTML=html;
+}
+
+// SHOP
+function buyRod(){
+    let cost = 20*Math.pow(2,rodLevel-1);
+
+    if(tokens>=cost){
+        tokens-=cost;
+        rodLevel++;
+        showStatus("Rod upgraded!", "success");
+        updateHUD();
+    } else {
+        showStatus("Not enough tokens", "error");
+    }
+}
+
+function buyBait(){
+    if(tokens>=5){
+        tokens-=5;
+        bait+=3;
+        showStatus("Bait +3", "success");
+        updateHUD();
+    } else {
+        showStatus("Not enough tokens", "error");
+    }
 }
 
 // EVENTS
