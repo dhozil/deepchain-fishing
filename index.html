@@ -3,254 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <title>GenLayer Fishing Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 
 <style>
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  background: black;
-  color: white;
-  overflow: hidden;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: url('banner.png') no-repeat center center/cover;
+    height: 100vh;
+    overflow: hidden;
 }
 
-/* FULLSCREEN BANNER */
-#landing {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  background: url('./banner.png') no-repeat center center;
-  background-size: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+/* Overlay */
+.overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.35);
 }
 
-/* DARK OVERLAY */
-#overlay {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.6);
+/* Wallet Button */
+#walletBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
 }
 
-/* CENTER CONTENT */
-#center-box {
-  position: relative;
-  text-align: center;
-  margin-top: 150px;
+/* Center Box */
+.center-box {
+    position: absolute;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.7);
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    width: 320px;
 }
 
-/* TITLE */
-h1 {
-  font-size: 64px;
-  margin: 0;
+.center-box h2 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 22px;
 }
 
-h2 {
-  font-size: 20px;
-  margin-top: 10px;
-  opacity: 0.8;
-}
-
-/* INPUT */
 input {
-  padding: 12px;
-  font-size: 18px;
-  border-radius: 8px;
-  border: none;
-  margin-top: 40px;
+    width: 90%;
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    margin-bottom: 15px;
+    font-size: 14px;
 }
 
-/* BUTTON */
 button {
-  padding: 12px 20px;
-  font-size: 18px;
-  margin-top: 15px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
 }
 
-/* CONNECT BUTTON TOP RIGHT */
-#connectBtn {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 10;
+/* Game UI */
+#gameUI {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 20px;
 }
 
-/* GAME */
-#game {
-  display: none;
-  padding: 20px;
+#castBtn {
+    background: gold;
+    margin-top: 10px;
 }
+
 </style>
 </head>
 
 <body>
 
-<!-- CONNECT WALLET -->
-<button id="connectBtn">Connect Wallet</button>
+<div class="overlay"></div>
 
-<!-- LANDING -->
-<div id="landing">
-  <div id="overlay"></div>
+<button id="walletBtn">Connect Wallet</button>
 
-  <div id="center-box">
-    <h1>Fishing Game</h1>
-    <h2>for GenLayer Community</h2>
-
-    <input id="nickname" placeholder="Enter nickname" />
+<div class="center-box">
+    <h2>🎣 Fishing Game</h2>
+    <input id="nickname" placeholder="Enter nickname">
     <br>
     <button onclick="startGame()">Start Game</button>
-  </div>
 </div>
 
-<!-- GAME UI -->
-<div id="game">
-  <h2 id="wallet"></h2>
-  <h3 id="balance"></h3>
-
-  <button onclick="cast()">🎣 Cast</button>
-
-  <h3>Result:</h3>
-  <div id="result"></div>
+<div id="gameUI">
+    <div id="playerInfo"></div>
+    <button id="castBtn" onclick="cast()">🎣 Cast</button>
+    <div id="result"></div>
 </div>
 
 <script>
-let account = null;
 
-/* ✅ CONTRACT ADDRESS FIXED */
-const CONTRACT = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
+const CONTRACT_ADDRESS = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
 
-/* ✅ CONNECT WALLET */
-document.getElementById("connectBtn").onclick = async () => {
-  if (!window.ethereum) {
-    alert("Install MetaMask");
-    return;
-  }
+let provider;
+let signer;
+let contract;
+let userAddress;
 
-  try {
-    const accounts = await window.ethereum.request({
-      method: "eth_requestAccounts"
-    });
+const ABI = [
+    "function register(string name)",
+    "function cast()",
+    "function get_stats(address) view returns (string)"
+];
 
-    account = accounts[0];
+async function connectWallet() {
+    try {
+        if (!window.ethereum) {
+            alert("Install MetaMask!");
+            return;
+        }
 
-    /* ✅ ADD GENLAYER NETWORK */
-    await window.ethereum.request({
-      method: "wallet_addEthereumChain",
-      params: [{
-        chainId: "0xF22F", // 61999
-        chainName: "GenLayer Studio",
-        rpcUrls: ["https://studio.genlayer.com/api"],
-        nativeCurrency: {
-          name: "GEN",
-          symbol: "GEN",
-          decimals: 18
-        },
-        blockExplorerUrls: ["https://explorer-studio.genlayer.com"]
-      }]
-    });
+        provider = new ethers.providers.Web3Provider(window.ethereum);
 
-    document.getElementById("wallet").innerText =
-      "Wallet: " + account;
+        // Add / Switch Network (GenLayer)
+        await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+                chainId: "0xF22F",
+                chainName: "GenLayer Studio",
+                rpcUrls: ["https://studio.genlayer.com/api"],
+                nativeCurrency: {
+                    name: "GEN",
+                    symbol: "GEN",
+                    decimals: 18
+                },
+                blockExplorerUrls: ["https://explorer-studio.genlayer.com"]
+            }]
+        });
 
-    alert("Connected!");
+        await provider.send("eth_requestAccounts", []);
 
-  } catch (err) {
-    console.error(err);
-    alert("Connection failed");
-  }
-};
+        signer = provider.getSigner();
+        userAddress = await signer.getAddress();
 
-/* START GAME */
-async function startGame() {
-  const name = document.getElementById("nickname").value;
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-  if (!account) {
-    alert("Connect wallet first");
-    return;
-  }
+        document.getElementById("walletBtn").innerText =
+            userAddress.slice(0,6) + "..." + userAddress.slice(-4);
 
-  if (!name) {
-    alert("Enter nickname");
-    return;
-  }
-
-  /* CALL REGISTER */
-  await sendTx("register", [name]);
-
-  document.getElementById("landing").style.display = "none";
-  document.getElementById("game").style.display = "block";
-
-  loadStats();
-}
-
-/* CAST */
-async function cast() {
-  document.getElementById("result").innerText = "Fishing...";
-
-  await sendTx("cast", []);
-
-  setTimeout(loadStats, 2000);
-}
-
-/* LOAD STATS */
-async function loadStats() {
-  const res = await callView("get_stats", [account]);
-
-  const data = JSON.parse(res);
-
-  document.getElementById("balance").innerText =
-    "Balance: " + data.balance;
-
-  if (data.recent_catches.length > 0) {
-    const last = data.recent_catches[data.recent_catches.length - 1];
-    document.getElementById("result").innerText = last.message;
-  }
-}
-
-/* VIEW CALL */
-async function callView(method, args) {
-  const res = await fetch(
-    "https://studio.genlayer.com/api",
-    {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        method: "gen_call",
-        params: {
-          to: CONTRACT,
-          data: {
-            method: method,
-            args: args
-          }
-        },
-        id: 1
-      })
+    } catch (err) {
+        console.error(err);
+        alert("Connection failed - check network (GenLayer)");
     }
-  );
-
-  const json = await res.json();
-  return json.result;
 }
 
-/* SEND TX */
-async function sendTx(method, args) {
-  await window.ethereum.request({
-    method: "eth_sendTransaction",
-    params: [{
-      from: account,
-      to: CONTRACT,
-      data: JSON.stringify({
-        method: method,
-        args: args
-      })
-    }]
-  });
+document.getElementById("walletBtn").onclick = connectWallet;
+
+async function startGame() {
+    if (!contract) {
+        alert("Connect wallet first!");
+        return;
+    }
+
+    const name = document.getElementById("nickname").value;
+
+    if (!name) {
+        alert("Enter nickname!");
+        return;
+    }
+
+    try {
+        const tx = await contract.register(name);
+        await tx.wait();
+
+        document.querySelector(".center-box").style.display = "none";
+        document.getElementById("gameUI").style.display = "block";
+
+        loadStats();
+
+    } catch (err) {
+        console.error(err);
+        alert("Register failed");
+    }
 }
+
+async function cast() {
+    try {
+        document.getElementById("result").innerText = "Casting...";
+
+        const tx = await contract.cast();
+        await tx.wait();
+
+        loadStats();
+
+    } catch (err) {
+        console.error(err);
+        document.getElementById("result").innerText = "Cast failed";
+    }
+}
+
+async function loadStats() {
+    try {
+        const data = await contract.get_stats(userAddress);
+        const parsed = JSON.parse(data);
+
+        document.getElementById("playerInfo").innerText =
+            "Player: " + parsed.name +
+            " | Balance: " + parsed.balance;
+
+        if (parsed.recent_catches.length > 0) {
+            const last = parsed.recent_catches[parsed.recent_catches.length - 1];
+            document.getElementById("result").innerText = last.message;
+        }
+
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 </script>
 
 </body>
