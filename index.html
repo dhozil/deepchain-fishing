@@ -3,231 +3,236 @@
 <head>
 <meta charset="UTF-8">
 <title>GenLayer Fishing Game</title>
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.min.js"></script>
 
 <style>
 body {
-    margin:0;
+    margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(#0a2540, #1e3c72);
-    color:white;
-    text-align:center;
+    background: #0b1d2a;
+    color: white;
 }
 
-#topbar {
-    position:absolute;
-    top:20px;
-    right:20px;
+/* HERO FULLSCREEN */
+#hero {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    background: url("banner.png") center/cover no-repeat;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-#wallet {
-    margin-top:5px;
-    font-size:14px;
-    opacity:0.8;
+/* CONNECT BUTTON */
+#connectBtn {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    padding: 16px 28px;
+    font-size: 18px;
+    background: #00c3ff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* REGISTER BOX */
+#registerBox {
+    background: rgba(0,0,0,0.7);
+    padding: 40px;
+    border-radius: 16px;
+    text-align: center;
+}
+
+#registerBox h1 {
+    font-size: 42px;
+    margin-bottom: 20px;
+}
+
+#registerBox input {
+    padding: 16px;
+    font-size: 20px;
+    border-radius: 10px;
+    border: none;
+    width: 260px;
+    margin-bottom: 15px;
+}
+
+#registerBox button {
+    padding: 16px 26px;
+    font-size: 20px;
+    border-radius: 10px;
+    border: none;
+    background: #00c3ff;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+/* GAME UI */
+#game {
+    display: none;
+    padding: 30px;
+}
+
+.card {
+    background: #112b3c;
+    padding: 25px;
+    border-radius: 14px;
+    margin-top: 20px;
 }
 
 button {
-    padding:12px 20px;
-    border:none;
-    border-radius:10px;
-    background:#00c6ff;
-    color:black;
-    font-weight:bold;
-    cursor:pointer;
-    margin:5px;
-    font-size:16px;
+    padding: 14px 22px;
+    margin: 8px;
+    border: none;
+    border-radius: 10px;
+    background: #00c3ff;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
 }
 
-button:hover {
-    background:#00a2cc;
-}
-
-#container {
-    margin-top:120px;
-}
-
-#banner {
-    width:420px;
-    max-width:90%;
-    margin-bottom:25px;
-    border-radius:20px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.6);
-}
-
-#ocean {
-    margin:30px auto;
-    width:340px;
-    height:170px;
-    border-radius:20px;
-    background: linear-gradient(#00c6ff, #0072ff);
-    position:relative;
-    overflow:hidden;
-}
-
-.wave {
-    position:absolute;
-    width:200%;
-    height:100%;
-    background: rgba(255,255,255,0.2);
-    border-radius:40%;
-    animation: wave 6s infinite linear;
-}
-
-.wave:nth-child(2){
-    animation-delay: -3s;
-}
-
-@keyframes wave {
-    from { transform: translateX(0); }
-    to { transform: translateX(-50%); }
-}
-
-#line {
-    position:absolute;
-    width:2px;
-    height:0;
-    background:white;
-    top:-60px;
-    left:50%;
-    transition: height 0.4s ease;
-}
-
-input {
-    padding:10px;
-    border-radius:8px;
-    border:none;
-    margin-top:10px;
-    width:200px;
+#animation {
+    display: none;
+    font-size: 26px;
+    text-align: center;
+    margin-top: 20px;
 }
 
 #result {
-    margin-top:20px;
-    font-size:22px;
-    font-weight:bold;
-}
-
-#stats {
-    margin-top:20px;
-    font-size:18px;
-    opacity:0.9;
+    text-align: center;
+    font-size: 22px;
+    margin-top: 15px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="topbar">
-    <button onclick="connectWallet()">Connect Wallet</button>
-    <div id="wallet">Not connected</div>
+<!-- HERO -->
+<div id="hero">
+
+<button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+
+<div id="registerBox">
+    <h1>🎣 Fishing Game</h1>
+    <input id="nickname" placeholder="Enter your nickname">
+    <br>
+    <button onclick="register()">Start Game</button>
 </div>
 
-<div id="container">
+</div>
 
-    <img id="banner" src="assets/banner.png" alt="Fishing Game Banner">
+<!-- GAME -->
+<div id="game">
 
-    <div id="ocean">
-        <div class="wave"></div>
-        <div class="wave"></div>
-        <div id="line"></div>
-    </div>
+<h1>🎣 GenLayer Fishing Game</h1>
+<p id="wallet"></p>
 
-    <div>
-        <input id="nameInput" placeholder="Enter nickname">
-        <br>
-        <button onclick="register()">Register</button>
-    </div>
+<div class="card">
+    <h2>Player Stats</h2>
+    <pre id="stats"></pre>
+</div>
 
-    <div>
-        <button onclick="cast()">🎣 Cast Fishing</button>
-    </div>
+<div class="card">
+    <h2>Actions</h2>
+    <button onclick="cast()">🎣 Cast</button>
+</div>
 
-    <div id="result"></div>
-    <div id="stats"></div>
+<div id="animation">🎣 Casting...</div>
+<div id="result"></div>
+
+<div class="card">
+    <h2>Shop</h2>
+    <button onclick="buyRod('platinum')">Platinum Rod</button>
+    <button onclick="buyRod('adamantite')">Adamantite Rod</button>
+    <button onclick="buyBait('worm')">Worm</button>
+    <button onclick="buyBait('shrimp')">Shrimp</button>
+    <button onclick="buyBait('magic_lure')">Magic Lure</button>
+</div>
 
 </div>
 
 <script>
-const CONTRACT = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
+const CONTRACT_ADDRESS = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
 
-let provider;
-let signer;
-let address;
+let provider, signer, contract, userAddress;
 
-async function connectWallet(){
-    try{
-        if(!window.ethereum){
-            alert("Install Metamask!");
-            return;
-        }
+const ABI = [
+    "function register(string name)",
+    "function cast()",
+    "function buy_rod(string)",
+    "function buy_bait(string)",
+    "function get_stats(address) view returns (string)"
+];
 
-        provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = await provider.getSigner();
-        address = await signer.getAddress();
+async function connectWallet() {
+    provider = new ethers.BrowserProvider(window.ethereum);
+    signer = await provider.getSigner();
+    userAddress = await signer.getAddress();
 
-        document.getElementById("wallet").innerText =
-            address.slice(0,6) + "..." + address.slice(-4);
+    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-        document.getElementById("result").innerText = "Wallet connected!";
-        loadStats();
-
-    }catch(e){
-        console.error(e);
-    }
+    document.getElementById("wallet").innerText = "Wallet: " + userAddress;
 }
 
-async function callContract(method, args=[]){
-    console.log("CALL:", method, args);
-    return "{}";
-}
-
-async function register(){
-    const name = document.getElementById("nameInput").value;
-
-    if(!name){
-        alert("Enter nickname!");
-        return;
-    }
-
-    document.getElementById("result").innerText = "Registering...";
-
-    await callContract("register",[name]);
-
-    document.getElementById("result").innerText = "Registered!";
-}
-
-async function cast(){
-    if(!address){
+async function register() {
+    if (!contract) {
         alert("Connect wallet first!");
         return;
     }
 
-    const line = document.getElementById("line");
+    const name = document.getElementById("nickname").value;
+    if (!name) return;
 
-    line.style.height = "130px";
+    const tx = await contract.register(name);
+    await tx.wait();
 
-    document.getElementById("result").innerText = "Casting...";
+    document.getElementById("hero").style.display = "none";
+    document.getElementById("game").style.display = "block";
 
-    setTimeout(async ()=>{
-        await callContract("cast");
-
-        line.style.height = "0px";
-
-        document.getElementById("result").innerText =
-            "You caught something!";
-
-        loadStats();
-
-    },1500);
+    loadStats();
 }
 
-async function loadStats(){
-    if(!address) return;
+async function cast() {
+    document.getElementById("animation").style.display = "block";
+    document.getElementById("result").innerText = "";
 
-    await callContract("get_stats",[address]);
+    const tx = await contract.cast();
+    await tx.wait();
+
+    document.getElementById("animation").style.display = "none";
+    document.getElementById("result").innerText = "🎉 You cast your line!";
+
+    loadStats();
+}
+
+async function buyRod(type) {
+    const tx = await contract.buy_rod(type);
+    await tx.wait();
+    loadStats();
+}
+
+async function buyBait(type) {
+    const tx = await contract.buy_bait(type);
+    await tx.wait();
+    loadStats();
+}
+
+async function loadStats() {
+    const data = await contract.get_stats(userAddress);
+    const parsed = JSON.parse(data);
 
     document.getElementById("stats").innerText =
-        "Stats loading (soon real data)";
+        "Name: " + parsed.name + "\n" +
+        "Balance: " + parsed.balance + "\n" +
+        "Rod: " + parsed.rod + "\n" +
+        "Bait: " + parsed.bait + "\n" +
+        "Total Earned: " + parsed.total_earned;
 }
 </script>
 
