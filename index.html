@@ -4,277 +4,252 @@
 <meta charset="UTF-8">
 <title>GenLayer Fishing Game</title>
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.min.js"></script>
-
 <style>
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0b1d2a;
-    color: white;
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: black;
+  color: white;
+  overflow: hidden;
 }
 
-/* HERO FULLSCREEN */
-#hero {
-    position: fixed;
-    width: 100%;
-    height: 100vh;
-    background: url("banner.png") center/cover no-repeat;
-    z-index: 1;
+/* FULLSCREEN BANNER */
+#landing {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: url('./banner.png') no-repeat center center;
+  background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-/* CONNECT BUTTON */
-#connectBtn {
-    position: absolute;
-    top: 25px;
-    right: 25px;
-    padding: 16px 28px;
-    font-size: 18px;
-    background: #00c3ff;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    z-index: 9999;
+/* DARK OVERLAY */
+#overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
 }
 
-/* REGISTER BOX */
-#registerBox {
-    position: absolute;
-    top: 75%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    
-    background: rgba(0,0,0,0.6);
-    padding: 22px;
-    border-radius: 14px;
-    text-align: center;
-    backdrop-filter: blur(6px);
-
-    z-index: 2;
+/* CENTER CONTENT */
+#center-box {
+  position: relative;
+  text-align: center;
+  margin-top: 150px;
 }
 
-#registerBox h1 {
-    font-size: 28px;
-    margin-bottom: 12px;
+/* TITLE */
+h1 {
+  font-size: 64px;
+  margin: 0;
 }
 
-#registerBox input {
-    padding: 12px;
-    font-size: 16px;
-    border-radius: 10px;
-    border: none;
-    width: 220px;
-    margin-bottom: 10px;
+h2 {
+  font-size: 20px;
+  margin-top: 10px;
+  opacity: 0.8;
 }
 
-#registerBox button {
-    padding: 12px 18px;
-    font-size: 16px;
-    border-radius: 10px;
-    border: none;
-    background: #00c3ff;
-    cursor: pointer;
-    font-weight: bold;
+/* INPUT */
+input {
+  padding: 12px;
+  font-size: 18px;
+  border-radius: 8px;
+  border: none;
+  margin-top: 40px;
 }
 
-/* GAME UI */
-#game {
-    display: none;
-    padding: 30px;
-}
-
-.card {
-    background: #112b3c;
-    padding: 25px;
-    border-radius: 14px;
-    margin-top: 20px;
-}
-
+/* BUTTON */
 button {
-    padding: 14px 22px;
-    margin: 8px;
-    border: none;
-    border-radius: 10px;
-    background: #00c3ff;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
+  padding: 12px 20px;
+  font-size: 18px;
+  margin-top: 15px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
 }
 
-#animation {
-    display: none;
-    font-size: 26px;
-    text-align: center;
-    margin-top: 20px;
+/* CONNECT BUTTON TOP RIGHT */
+#connectBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
 }
 
-#result {
-    text-align: center;
-    font-size: 22px;
-    margin-top: 15px;
+/* GAME */
+#game {
+  display: none;
+  padding: 20px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- HERO -->
-<div id="hero">
+<!-- CONNECT WALLET -->
+<button id="connectBtn">Connect Wallet</button>
 
-<button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+<!-- LANDING -->
+<div id="landing">
+  <div id="overlay"></div>
 
-<div id="registerBox">
-    <h1>🎣 Fishing Game</h1>
-    <input id="nickname" placeholder="Enter your nickname">
+  <div id="center-box">
+    <h1>Fishing Game</h1>
+    <h2>for GenLayer Community</h2>
+
+    <input id="nickname" placeholder="Enter nickname" />
     <br>
-    <button onclick="register()">Start Game</button>
+    <button onclick="startGame()">Start Game</button>
+  </div>
 </div>
 
-</div>
-
-<!-- GAME -->
+<!-- GAME UI -->
 <div id="game">
+  <h2 id="wallet"></h2>
+  <h3 id="balance"></h3>
 
-<h1>🎣 GenLayer Fishing Game</h1>
-<p id="wallet"></p>
+  <button onclick="cast()">🎣 Cast</button>
 
-<div class="card">
-    <h2>Player Stats</h2>
-    <pre id="stats"></pre>
-</div>
-
-<div class="card">
-    <h2>Actions</h2>
-    <button onclick="cast()">🎣 Cast</button>
-</div>
-
-<div id="animation">🎣 Casting...</div>
-<div id="result"></div>
-
-<div class="card">
-    <h2>Shop</h2>
-    <button onclick="buyRod('platinum')">Platinum Rod</button>
-    <button onclick="buyRod('adamantite')">Adamantite Rod</button>
-    <button onclick="buyBait('worm')">Worm</button>
-    <button onclick="buyBait('shrimp')">Shrimp</button>
-    <button onclick="buyBait('magic_lure')">Magic Lure</button>
-</div>
-
+  <h3>Result:</h3>
+  <div id="result"></div>
 </div>
 
 <script>
-const CONTRACT_ADDRESS = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
+let account = null;
 
-let provider, signer, contract, userAddress;
+/* ✅ CONTRACT ADDRESS FIXED */
+const CONTRACT = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62";
 
-const ABI = [
-    "function register(string name)",
-    "function cast()",
-    "function buy_rod(string)",
-    "function buy_bait(string)",
-    "function get_stats(address) view returns (string)"
-];
+/* ✅ CONNECT WALLET */
+document.getElementById("connectBtn").onclick = async () => {
+  if (!window.ethereum) {
+    alert("Install MetaMask");
+    return;
+  }
 
-async function connectWallet() {
-    try {
-        if (!window.ethereum) {
-            alert("Please install MetaMask");
-            return;
-        }
+  try {
+    const accounts = await window.ethereum.request({
+      method: "eth_requestAccounts"
+    });
 
-        // request wallet connect
-        await window.ethereum.request({
-            method: "eth_requestAccounts"
-        });
+    account = accounts[0];
 
-        provider = new ethers.BrowserProvider(window.ethereum);
-        signer = await provider.getSigner();
-        userAddress = await signer.getAddress();
+    /* ✅ ADD GENLAYER NETWORK */
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: "0xF22F", // 61999
+        chainName: "GenLayer Studio",
+        rpcUrls: ["https://studio.genlayer.com/api"],
+        nativeCurrency: {
+          name: "GEN",
+          symbol: "GEN",
+          decimals: 18
+        },
+        blockExplorerUrls: ["https://explorer-studio.genlayer.com"]
+      }]
+    });
 
-        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+    document.getElementById("wallet").innerText =
+      "Wallet: " + account;
 
-        document.getElementById("connectBtn").innerText = "Connected ✅";
-        document.getElementById("wallet").innerText = "Wallet: " + userAddress;
+    alert("Connected!");
 
-    } catch (err) {
-        console.error("FULL ERROR:", err);
+  } catch (err) {
+    console.error(err);
+    alert("Connection failed");
+  }
+};
 
-        if (err.code === 4001) {
-            alert("User rejected connection");
-        } else {
-            alert("Connection failed - check network (GenLayer)");
-        }
-    }
+/* START GAME */
+async function startGame() {
+  const name = document.getElementById("nickname").value;
+
+  if (!account) {
+    alert("Connect wallet first");
+    return;
+  }
+
+  if (!name) {
+    alert("Enter nickname");
+    return;
+  }
+
+  /* CALL REGISTER */
+  await sendTx("register", [name]);
+
+  document.getElementById("landing").style.display = "none";
+  document.getElementById("game").style.display = "block";
+
+  loadStats();
 }
 
-async function register() {
-    if (!contract) {
-        alert("Connect wallet first!");
-        return;
-    }
-
-    const name = document.getElementById("nickname").value;
-    if (!name) {
-        alert("Enter nickname!");
-        return;
-    }
-
-    try {
-        const tx = await contract.register(name);
-        await tx.wait();
-
-        document.getElementById("hero").style.display = "none";
-        document.getElementById("game").style.display = "block";
-
-        loadStats();
-
-    } catch (err) {
-        console.error(err);
-        alert("Register failed");
-    }
-}
-
+/* CAST */
 async function cast() {
-    document.getElementById("animation").style.display = "block";
-    document.getElementById("result").innerText = "";
+  document.getElementById("result").innerText = "Fishing...";
 
-    try {
-        const tx = await contract.cast();
-        await tx.wait();
+  await sendTx("cast", []);
 
-        document.getElementById("animation").style.display = "none";
-        document.getElementById("result").innerText = "🎉 You cast your line!";
-
-        loadStats();
-    } catch (err) {
-        console.error(err);
-        alert("Cast failed");
-    }
+  setTimeout(loadStats, 2000);
 }
 
-async function buyRod(type) {
-    const tx = await contract.buy_rod(type);
-    await tx.wait();
-    loadStats();
-}
-
-async function buyBait(type) {
-    const tx = await contract.buy_bait(type);
-    await tx.wait();
-    loadStats();
-}
-
+/* LOAD STATS */
 async function loadStats() {
-    const data = await contract.get_stats(userAddress);
-    const parsed = JSON.parse(data);
+  const res = await callView("get_stats", [account]);
 
-    document.getElementById("stats").innerText =
-        "Name: " + parsed.name + "\n" +
-        "Balance: " + parsed.balance + "\n" +
-        "Rod: " + parsed.rod + "\n" +
-        "Bait: " + parsed.bait + "\n" +
-        "Total Earned: " + parsed.total_earned;
+  const data = JSON.parse(res);
+
+  document.getElementById("balance").innerText =
+    "Balance: " + data.balance;
+
+  if (data.recent_catches.length > 0) {
+    const last = data.recent_catches[data.recent_catches.length - 1];
+    document.getElementById("result").innerText = last.message;
+  }
+}
+
+/* VIEW CALL */
+async function callView(method, args) {
+  const res = await fetch(
+    "https://studio.genlayer.com/api",
+    {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        method: "gen_call",
+        params: {
+          to: CONTRACT,
+          data: {
+            method: method,
+            args: args
+          }
+        },
+        id: 1
+      })
+    }
+  );
+
+  const json = await res.json();
+  return json.result;
+}
+
+/* SEND TX */
+async function sendTx(method, args) {
+  await window.ethereum.request({
+    method: "eth_sendTransaction",
+    params: [{
+      from: account,
+      to: CONTRACT,
+      data: JSON.stringify({
+        method: method,
+        args: args
+      })
+    }]
+  });
 }
 </script>
 
