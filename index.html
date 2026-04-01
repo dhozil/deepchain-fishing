@@ -15,8 +15,122 @@ html, body {
 
 /* BACKGROUND */
 body {
-    background: url('banner.png') no-repeat center center;
-    background-size: cover;
+    background: linear-gradient(to bottom, #87CEEB 0%, #1e3c72 50%, #0a1929 100%);
+    background-attachment: fixed;
+}
+
+/* OCEAN WAVES */
+.ocean-waves {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(to bottom, rgba(30,60,114,0.3), rgba(10,25,41,0.8));
+    overflow: hidden;
+}
+
+.wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: 100px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,60 C150,90 350,30 600,60 C850,90 1050,30 1200,60 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/></svg>') repeat-x;
+    animation: wave 8s linear infinite;
+}
+
+.wave:nth-child(2) {
+    bottom: 10px;
+    animation: wave 12s linear infinite reverse;
+    opacity: 0.5;
+}
+
+.wave:nth-child(3) {
+    bottom: 20px;
+    animation: wave 16s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes wave {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* CLOUDS */
+.clouds {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+}
+
+.cloud {
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+    opacity: 0.7;
+}
+
+.cloud::before,
+.cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+}
+
+.cloud1 {
+    width: 100px;
+    height: 40px;
+    top: 20px;
+    left: 20%;
+    animation: float 20s infinite;
+}
+
+.cloud1::before {
+    width: 50px;
+    height: 50px;
+    top: -25px;
+    left: 10px;
+}
+
+.cloud1::after {
+    width: 60px;
+    height: 40px;
+    top: -15px;
+    right: 10px;
+}
+
+.cloud2 {
+    width: 80px;
+    height: 35px;
+    top: 60px;
+    left: 60%;
+    animation: float 25s infinite;
+}
+
+.cloud2::before {
+    width: 40px;
+    height: 40px;
+    top: -20px;
+    left: 15px;
+}
+
+.cloud2::after {
+    width: 50px;
+    height: 35px;
+    top: -10px;
+    right: 15px;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(20px) translateY(-10px); }
+    50% { transform: translateX(-10px) translateY(5px); }
+    75% { transform: translateX(15px) translateY(-5px); }
 }
 
 /* OVERLAY */
@@ -101,6 +215,72 @@ button {
     text-align: center;
 }
 
+/* LEADERBOARD */
+#leaderboard {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    width: 280px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 12px;
+    padding: 15px;
+    color: white;
+    z-index: 15;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+#leaderboard h3 {
+    margin-top: 0;
+    color: #00cfff;
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.leaderboard-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    margin: 5px 0;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border-left: 3px solid #00cfff;
+}
+
+.leaderboard-item.current-player {
+    background: rgba(0,255,255,0.1);
+    border-left-color: #ff6b6b;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: #00cfff;
+    margin-right: 10px;
+    min-width: 25px;
+}
+
+.leaderboard-name {
+    flex: 1;
+    font-size: 14px;
+}
+
+.leaderboard-tokens {
+    font-weight: bold;
+    color: #ff6b6b;
+    font-size: 14px;
+}
+
+.leaderboard-rank.gold { color: #ffd700; }
+.leaderboard-rank.silver { color: #c0c0c0; }
+.leaderboard-rank.bronze { color: #cd7f32; }
+
 /* FISHING GAME SCREEN */
 #fishingScreen {
     display: none;
@@ -109,7 +289,7 @@ button {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, #1e3c72, #2a5298);
+    background: transparent;
     z-index: 20;
 }
 
@@ -230,7 +410,25 @@ button {
 
 <body>
 
+<!-- 🌊 OCEAN ENVIRONMENT -->
+<div class="clouds">
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+</div>
+
 <div class="overlay"></div>
+
+<!-- 🏆 LEADERBOARD -->
+<div id="leaderboard">
+    <h3>🏆 Leaderboard</h3>
+    <div class="leaderboard-list" id="leaderboardList">
+        <div class="leaderboard-item">
+            <span class="leaderboard-rank">1st</span>
+            <span class="leaderboard-name">Loading...</span>
+            <span class="leaderboard-tokens">0</span>
+        </div>
+    </div>
+</div>
 
 <button id="walletBtn">Connect Wallet</button>
 
@@ -275,6 +473,13 @@ button {
             </div>
         </div>
     </div>
+</div>
+
+<!-- 🌊 OCEAN WAVES -->
+<div class="ocean-waves">
+    <div class="wave"></div>
+    <div class="wave"></div>
+    <div class="wave"></div>
 </div>
 
 <script>
@@ -330,6 +535,104 @@ let playerData = {
     totalFish: 0,
     bestCatch: null
 };
+
+// 🏆 LEADERBOARD SYSTEM
+let leaderboardData = [];
+
+// Load saved data from localStorage
+function loadGameData() {
+    const savedData = localStorage.getItem('fishingGameData');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        playerData = { ...playerData, ...data };
+    }
+    
+    // Load leaderboard
+    const savedLeaderboard = localStorage.getItem('fishingGameLeaderboard');
+    if (savedLeaderboard) {
+        leaderboardData = JSON.parse(savedLeaderboard);
+    }
+}
+
+// Save game data to localStorage
+function saveGameData() {
+    const dataToSave = {
+        nickname: playerData.nickname,
+        tokens: playerData.tokens,
+        rodLevel: playerData.rodLevel,
+        bait: playerData.bait,
+        totalFish: playerData.totalFish,
+        bestCatch: playerData.bestCatch
+    };
+    localStorage.setItem('fishingGameData', JSON.stringify(dataToSave));
+}
+
+// Update leaderboard
+function updateLeaderboard() {
+    if (!userAddress || !playerData.nickname) return;
+    
+    // Find existing player in leaderboard
+    const existingPlayerIndex = leaderboardData.findIndex(p => p.address === userAddress);
+    
+    const playerEntry = {
+        address: userAddress,
+        nickname: playerData.nickname,
+        tokens: playerData.tokens,
+        totalFish: playerData.totalFish,
+        lastUpdated: Date.now()
+    };
+    
+    if (existingPlayerIndex >= 0) {
+        // Update existing player
+        leaderboardData[existingPlayerIndex] = playerEntry;
+    } else {
+        // Add new player
+        leaderboardData.push(playerEntry);
+    }
+    
+    // Sort by tokens (descending)
+    leaderboardData.sort((a, b) => b.tokens - a.tokens);
+    
+    // Keep only top 50 players
+    leaderboardData = leaderboardData.slice(0, 50);
+    
+    // Save to localStorage
+    localStorage.setItem('fishingGameLeaderboard', JSON.stringify(leaderboardData));
+    
+    // Update UI
+    renderLeaderboard();
+}
+
+// Render leaderboard
+function renderLeaderboard() {
+    const leaderboardList = document.getElementById('leaderboardList');
+    
+    if (leaderboardData.length === 0) {
+        leaderboardList.innerHTML = `
+            <div class="leaderboard-item">
+                <span class="leaderboard-rank">-</span>
+                <span class="leaderboard-name">No players yet</span>
+                <span class="leaderboard-tokens">0</span>
+            </div>
+        `;
+        return;
+    }
+    
+    leaderboardList.innerHTML = leaderboardData.slice(0, 10).map((player, index) => {
+        const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+        const isCurrentPlayer = player.address === userAddress;
+        
+        return `
+            <div class="leaderboard-item ${isCurrentPlayer ? 'current-player' : ''}">
+                <span class="leaderboard-rank ${rankClass}">
+                    ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}th`}
+                </span>
+                <span class="leaderboard-name">${player.nickname}</span>
+                <span class="leaderboard-tokens">${player.tokens.toLocaleString()}</span>
+            </div>
+        `;
+    }).join('');
+}
 
 // ELEMENTS
 const walletBtn = document.getElementById('walletBtn');
@@ -424,6 +727,7 @@ function showFishingScreen() {
     document.getElementById('playerName').textContent = `${playerData.nickname}'s Fishing Game`;
     updateStats();
     updateShop();
+    renderLeaderboard(); // Show leaderboard when game starts
 }
 
 function updateStats() {
@@ -432,8 +736,12 @@ function updateStats() {
     
     document.getElementById('statsContent').innerHTML = `
         <p>Total Fish: ${playerData.totalFish}</p>
-        <p>Best Catch: ${playerData.bestCatch || 'None'}</p>
+        <p>Best Catch: ${playerData.bestCatch ? playerData.bestCatch.name : 'None'}</p>
     `;
+    
+    // Save game data and update leaderboard
+    saveGameData();
+    updateLeaderboard();
 }
 
 function updateShop() {
@@ -589,20 +897,29 @@ function buyBait() {
 walletBtn.addEventListener('click', connectWallet);
 startBtn.addEventListener('click', startGame);
 
-// WALLET EVENT LISTENERS
-if (window.ethereum) {
-    window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-            userAddress = accounts[0];
-            walletBtn.textContent = `🦊 ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
-        } else {
-            userAddress = null;
-            isConnected = false;
-            walletBtn.textContent = 'Connect Wallet';
-            walletBtn.style.background = '#00cfff';
-        }
-    });
-}
+// PAGE LOAD - Initialize game
+window.addEventListener('load', () => {
+    console.log('Page loaded, initializing game...');
+    
+    // Load saved game data
+    loadGameData();
+    
+    // Render leaderboard immediately
+    renderLeaderboard();
+    
+    // Check wallet connection
+    if (window.ethereum) {
+        console.log('MetaMask detected');
+        window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
+            if (accounts.length > 0) {
+                console.log('MetaMask is unlocked but waiting for manual connection');
+            }
+        });
+    } else {
+        console.log('MetaMask not detected');
+        showStatus('MetaMask not found. Please install MetaMask extension.', 'error');
+    }
+});
 </script>
 
 </body>
