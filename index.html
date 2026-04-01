@@ -5,14 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GenLayer Fishing Game</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@300;500&display=swap" rel="stylesheet">
 
 <style>
 body {
   margin:0;
   font-family:'Inter', sans-serif;
-  background: radial-gradient(circle at top, #0a1a2f, #020817);
   color:#e6f0ff;
+  overflow-x:hidden;
+}
+
+/* 🌊 OCEAN */
+.ocean {
+  position:fixed;
+  width:100%;
+  height:100%;
+  background: linear-gradient(#0a1a2f, #020817);
+  z-index:-1;
+}
+
+.wave {
+  position:absolute;
+  width:200%;
+  height:200px;
+  background: rgba(0,150,255,0.15);
+  border-radius:40%;
+  animation: waveMove 10s linear infinite;
+}
+.wave:nth-child(2){ top:60px; opacity:0.5; }
+.wave:nth-child(3){ top:120px; opacity:0.3; }
+
+@keyframes waveMove {
+  from { transform:translateX(0); }
+  to { transform:translateX(-50%); }
 }
 
 /* WALLET */
@@ -20,9 +45,7 @@ body {
   position:fixed;
   top:20px;
   right:20px;
-  z-index:999;
   display:flex;
-  align-items:center;
   gap:10px;
 }
 
@@ -41,8 +64,6 @@ body {
   background:transparent;
   color:#00d4ff;
   cursor:pointer;
-  border-radius:6px;
-  font-weight:600;
 }
 .btn:hover {
   background:#00d4ff;
@@ -50,280 +71,268 @@ body {
 }
 
 /* CENTER */
-.center-screen {
+.center {
   height:100vh;
   display:flex;
-  flex-direction:column;
   justify-content:center;
   align-items:center;
-  text-align:center;
-  gap:20px;
+  flex-direction:column;
 }
-
-.banner {
-  width:100%;
-  max-width:720px;
-  border-radius:14px;
-  box-shadow:0 0 60px rgba(0,212,255,0.3);
-  transition:0.3s;
-}
-.banner:hover { transform:scale(1.03); }
-
-h2 {
-  font-family:'Cinzel', serif;
-  font-size:2.2rem;
-}
-
-input {
-  padding:12px;
-  border-radius:6px;
-  border:1px solid #00d4ff;
-  background:#021020;
-  color:white;
-  width:250px;
-}
-
-.hidden { display:none }
 
 /* GAME */
 .game {
-  max-width:1100px;
-  margin:120px auto;
+  margin-top:120px;
+  text-align:center;
 }
 
 .stats {
   display:flex;
-  gap:20px;
   justify-content:center;
-  margin-bottom:20px;
+  gap:20px;
 }
 
 .card {
   background:#04152a;
-  padding:15px 20px;
+  padding:12px 20px;
   border-radius:10px;
-  border:1px solid #0af;
-  font-size:18px;
 }
 
-.cast-btn {
-  font-size:20px;
-  padding:15px 40px;
-  margin-top:20px;
+/* 🎣 AREA */
+.fishing-area {
+  position:relative;
+  height:250px;
+  margin-top:40px;
+}
+
+.water {
+  position:absolute;
+  bottom:0;
+  width:100%;
+  height:120px;
+  background: linear-gradient(to top, #0077be, #00c6ff);
+}
+
+/* rod */
+.rod {
+  position:absolute;
+  left:50%;
+  top:0;
+  width:6px;
+  height:100px;
+  background:#ccc;
+  transform-origin:top;
+}
+
+/* line */
+.line {
+  position:absolute;
+  left:50%;
+  top:100px;
+  width:2px;
+  height:0;
+  background:#fff;
+}
+
+/* splash */
+.splash {
+  position:absolute;
+  bottom:110px;
+  left:50%;
+  transform:translateX(-50%);
+  font-size:30px;
+  opacity:0;
+}
+
+/* 🐟 fish jump */
+.fish {
+  position:absolute;
+  bottom:100px;
+  left:50%;
+  font-size:40px;
+  opacity:0;
+}
+
+/* ✨ glow */
+.glow {
+  position:fixed;
+  width:100%;
+  height:100%;
+  background: radial-gradient(circle, rgba(255,215,0,0.2), transparent);
+  opacity:0;
+  pointer-events:none;
+}
+
+/* animations */
+@keyframes castRod {
+  0%{transform:rotate(0)}
+  50%{transform:rotate(-40deg)}
+  100%{transform:rotate(0)}
+}
+
+@keyframes dropLine {
+  from{height:0}
+  to{height:120px}
+}
+
+@keyframes splashAnim {
+  0%{opacity:0}
+  50%{opacity:1}
+  100%{opacity:0}
+}
+
+@keyframes fishJump {
+  0%{opacity:0; transform:translateY(0)}
+  50%{opacity:1; transform:translateY(-80px)}
+  100%{opacity:0}
+}
+
+@keyframes glowFlash {
+  0%{opacity:0}
+  50%{opacity:1}
+  100%{opacity:0}
 }
 
 .result {
   margin-top:20px;
-  font-size:22px;
-  text-align:center;
-}
-
-/* SHOP */
-.shop {
-  margin-top:30px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.shop-item {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:#021020;
-  padding:12px;
-  border-radius:8px;
+  font-size:24px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- WALLET -->
+<div class="ocean">
+  <div class="wave"></div>
+  <div class="wave"></div>
+  <div class="wave"></div>
+</div>
+
+<div class="glow" id="glow"></div>
+
 <div class="wallet-bar">
   <span id="addr"></span>
-  <button class="btn" onclick="connect()" id="connectBtn">Connect</button>
+  <button class="btn" onclick="connect()">Connect</button>
 </div>
 
-<!-- HERO -->
-<div class="center-screen" id="hero">
-  <img src="banner.png" class="banner">
-  <h2>On-chain Fishing Game</h2>
-  <p>For GenLayer Community</p>
-  <button class="btn" onclick="connect()">Start Fishing</button>
+<div class="center" id="hero">
+  <h1>Fishing Game</h1>
+  <button class="btn" onclick="connect()">Start</button>
 </div>
 
-<!-- REGISTER -->
-<div class="center-screen hidden" id="register">
-  <h2>Choose Your Name</h2>
+<div class="center hidden" id="register">
   <input id="nameInput" placeholder="Your name">
   <button class="btn" onclick="register()">Register</button>
 </div>
 
-<!-- GAME -->
 <div class="game hidden" id="game">
 
   <div class="stats">
-    <div class="card">💰 Balance: <span id="balance">0</span></div>
-    <div class="card">🏆 Total: <span id="total">0</span></div>
-    <div class="card">🎣 Casts: <span id="casts">0</span></div>
+    <div class="card">💰 <span id="balance">0</span></div>
+    <div class="card">🏆 <span id="total">0</span></div>
+    <div class="card">🎣 <span id="casts">0</span></div>
   </div>
 
-  <div style="text-align:center">
-    <button class="btn cast-btn" onclick="cast()">🎣 CAST LINE</button>
+  <div class="fishing-area">
+    <div class="rod" id="rod"></div>
+    <div class="line" id="line"></div>
+    <div class="splash" id="splash">💦</div>
+    <div class="fish" id="fish">🐟</div>
+    <div class="water"></div>
   </div>
+
+  <button class="btn" onclick="cast()">🎣 CAST</button>
 
   <div class="result" id="result"></div>
-
-  <div class="shop" id="shop"></div>
 
 </div>
 
 <script>
-const CONTRACT = "0xA258E47F6A2D3CAf0469127677E5963093fbCA62"
-const RPC = "https://studio.genlayer.com/api"
+const CONTRACT="0xA258E47F6A2D3CAf0469127677E5963093fbCA62"
+const RPC="https://studio.genlayer.com/api"
 
-let user = null
-let stats = null
+let user
 
-async function rpcCall(fn, args=[]) {
-  const res = await fetch(RPC,{
+async function rpcCall(fn,args=[]){
+  const r=await fetch(RPC,{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({
       jsonrpc:"2.0",
       method:"gen_call",
-      params:[{to:CONTRACT,data:{function:fn,args}}, "latest"],
+      params:[{to:CONTRACT,data:{function:fn,args}},"latest"],
       id:1
     })
   })
-  const j = await res.json()
-  return JSON.parse(j.result)
+  return JSON.parse((await r.json()).result)
 }
 
-async function sendTx(fn,args) {
-  const data = JSON.stringify({function:fn,args})
-  let hex = "0x"
-  for(let i=0;i<data.length;i++){
-    hex += data.charCodeAt(i).toString(16)
-  }
-  return await ethereum.request({
+async function sendTx(fn,args){
+  let data=JSON.stringify({function:fn,args})
+  let hex="0x"
+  for(let i=0;i<data.length;i++) hex+=data.charCodeAt(i).toString(16)
+  return ethereum.request({
     method:"eth_sendTransaction",
     params:[{from:user,to:CONTRACT,data:hex}]
   })
 }
 
 async function connect(){
-  if (!window.ethereum) {
-    alert("Install MetaMask first")
-    return
-  }
-
-  const acc = await ethereum.request({method:"eth_requestAccounts"})
-  user = acc[0]
-
-  // show address
-  const short = user.slice(0,6)+"..."+user.slice(-4)
-  document.getElementById("addr").innerText = short
-
-  document.getElementById("connectBtn").innerText = "Connected"
-
+  const acc=await ethereum.request({method:"eth_requestAccounts"})
+  user=acc[0]
+  document.getElementById("addr").innerText=user.slice(0,6)+"..."+user.slice(-4)
   document.getElementById("hero").classList.add("hidden")
-
-  await load()
-}
-
-async function load(){
-  try{
-    stats = await rpcCall("get_stats",[user])
-
-    if(!stats.name || stats.name==="Unknown"){
-      document.getElementById("register").classList.remove("hidden")
-    } else {
-      startGame()
-    }
-  }catch{
-    document.getElementById("register").classList.remove("hidden")
-  }
-}
-
-async function register(){
-  const name = document.getElementById("nameInput").value
-  if(!name) return alert("Enter name")
-
-  await sendTx("register",[name])
-
-  document.getElementById("register").innerHTML = "Saving..."
-
-  setTimeout(startGame,5000)
+  startGame()
 }
 
 function startGame(){
-  document.getElementById("register").classList.add("hidden")
   document.getElementById("game").classList.remove("hidden")
   refresh()
 }
 
 async function refresh(){
-  stats = await rpcCall("get_stats",[user])
-
-  document.getElementById("balance").innerText = stats.balance
-  document.getElementById("total").innerText = stats.total_earned
-  document.getElementById("casts").innerText = stats.total_casts
-
-  renderShop()
+  const s=await rpcCall("get_stats",[user])
+  document.getElementById("balance").innerText=s.balance
+  document.getElementById("total").innerText=s.total_earned
+  document.getElementById("casts").innerText=s.total_casts
 }
 
 async function cast(){
-  document.getElementById("result").innerText = "Casting..."
+  const rod=document.getElementById("rod")
+  const line=document.getElementById("line")
+  const splash=document.getElementById("splash")
+  const fish=document.getElementById("fish")
+  const glow=document.getElementById("glow")
+  const result=document.getElementById("result")
+
+  rod.style.animation="castRod 0.6s"
+  setTimeout(()=>{line.style.animation="dropLine 0.6s forwards"},300)
+  setTimeout(()=>{splash.style.animation="splashAnim 1s"},900)
+
+  result.innerText="Fishing..."
 
   await sendTx("cast",[])
 
   setTimeout(async ()=>{
-    await refresh()
-    const last = stats.recent_catches.slice(-1)[0]
+    const s=await rpcCall("get_stats",[user])
+    const last=s.recent_catches.slice(-1)[0]
 
-    document.getElementById("result").innerText =
-      last.fish==="empty"
-      ? "💨 Nothing..."
-      : `🐟 ${last.fish} (+${last.points})`
+    if(last.rarity==="legendary"){
+      fish.style.animation="fishJump 1s"
+      glow.style.animation="glowFlash 1s"
+      result.innerText="🔥 LEGENDARY "+last.fish+"!!!"
+    }
+    else if(last.rarity==="rare"){
+      fish.style.animation="fishJump 0.8s"
+      result.innerText="🌟 Rare "+last.fish
+    }
+    else{
+      result.innerText=last.fish==="empty"?"💨 Nothing":"🐟 "+last.fish
+    }
+
+    rod.style.animation=""
+    line.style.height="0"
+
   },5000)
-}
-
-function renderShop(){
-  document.getElementById("shop").innerHTML = `
-    <h3>Shop</h3>
-
-    <div class="shop-item">
-      Platinum Rod - 50
-      <button onclick="buyRod('platinum')">Buy</button>
-    </div>
-
-    <div class="shop-item">
-      Adamantite Rod - 150
-      <button onclick="buyRod('adamantite')">Buy</button>
-    </div>
-
-    <div class="shop-item">
-      Worm - 10
-      <button onclick="buyBait('worm')">Buy</button>
-    </div>
-
-    <div class="shop-item">
-      Shrimp - 20
-      <button onclick="buyBait('shrimp')">Buy</button>
-    </div>
-  `
-}
-
-async function buyRod(r){
-  await sendTx("buy_rod",[r])
-  setTimeout(refresh,4000)
-}
-
-async function buyBait(b){
-  await sendTx("buy_bait",[b])
-  setTimeout(refresh,4000)
 }
 </script>
 
