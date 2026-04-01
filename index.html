@@ -13,6 +13,7 @@ html, body {
     font-family: Arial, sans-serif;
 }
 
+/* BACKGROUND */
 body {
     background: url('banner.png') no-repeat center center;
     background-size: cover;
@@ -24,9 +25,11 @@ body {
     width: 100%;
     height: 100%;
     background: rgba(0,0,0,0.25);
+    top: 0;
+    left: 0;
 }
 
-/* WALLET */
+/* CONNECT BUTTON */
 #walletBtn {
     position: absolute;
     top: 20px;
@@ -35,8 +38,156 @@ body {
     border-radius: 12px;
     border: none;
     background: #00cfff;
+    font-weight: bold;
     cursor: pointer;
     z-index: 10;
+}
+
+/* 🎯 MAIN BOX (INI KUNCI NYA) */
+.center-box {
+    position: absolute;
+    top: 76%; /* 🔥 posisi turun dari tengah */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    background: rgba(0,0,0,0.65);
+    padding: 30px;
+    border-radius: 18px;
+    text-align: center;
+    width: 340px;
+    z-index: 5;
+
+    backdrop-filter: blur(10px);
+}
+
+/* TITLE */
+.center-box h2 {
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    margin-top: 10px;
+    font-size: 15px;
+}
+
+/* BUTTON */
+button {
+    margin-top: 15px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* GAME UI */
+#gameUI {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+/* FISHING GAME SCREEN */
+#fishingScreen {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #1e3c72, #2a5298);
+    z-index: 20;
+}
+
+#fishingHeader {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    text-align: center;
+    color: white;
+}
+
+#fishingContent {
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+#fishingArea {
+    flex: 1;
+    text-align: center;
+}
+
+#castBtn {
+    font-size: 24px;
+    padding: 20px 40px;
+    background: #ff6b6b;
+    border-radius: 15px;
+    margin: 20px 0;
+}
+
+#castBtn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+#fishResult {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    min-height: 100px;
+}
+
+#sidePanel {
+    width: 300px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+#stats, #shop {
+    margin-bottom: 20px;
+}
+
+#stats h3, #shop h3 {
+    margin-top: 0;
+    color: #00cfff;
+}
+
+.shop-item {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-item button {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.shop-item button:disabled {
+    background: #666;
+    cursor: not-allowed;
 }
 
 /* STATUS */
@@ -46,64 +197,33 @@ body {
     right: 20px;
     padding: 8px 15px;
     border-radius: 8px;
-    background: white;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    font-size: 14px;
+    z-index: 10;
     display: none;
 }
 
-/* LOGIN */
-.center-box {
-    position: absolute;
-    top: 76%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.65);
-    padding: 30px;
-    border-radius: 18px;
-    color: white;
-    text-align: center;
-}
-
-/* GAME */
-#gameUI {
-    display: none;
-}
-
-canvas {
-    position: absolute;
-}
-
-#hud {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+#status.error {
+    background: #ff4444;
     color: white;
 }
 
-#result {
-    position: absolute;
-    bottom: 140px;
-    width: 100%;
-    text-align: center;
-    font-size: 22px;
+#status.success {
+    background: #44ff44;
     color: white;
 }
 
-#leaderboard {
-    position: absolute;
-    right: 10px;
-    top: 80px;
-    background: rgba(0,0,0,0.6);
-    padding: 10px;
-    color: white;
+/* FISH ANIMATION */
+@keyframes fishJump {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(10deg); }
+    100% { transform: translateY(0) rotate(0deg); }
 }
 
-#shop {
-    position: absolute;
-    right: 10px;
-    bottom: 80px;
-    background: rgba(0,0,0,0.6);
-    padding: 10px;
-    color: white;
+.fish-emoji {
+    font-size: 48px;
+    animation: fishJump 0.5s ease-in-out;
 }
 </style>
 </head>
@@ -113,60 +233,131 @@ canvas {
 <div class="overlay"></div>
 
 <button id="walletBtn">Connect Wallet</button>
+
 <div id="status"></div>
 
+<!-- 🎯 BOX UTAMA -->
 <div class="center-box">
     <h2>🎣 Fishing Game</h2>
     <input id="nicknameInput" placeholder="Enter your nickname">
     <button id="startBtn">Start Game</button>
 </div>
 
-<div id="gameUI">
-    <canvas id="canvas"></canvas>
-    <div id="hud"></div>
-    <div id="result"></div>
-    <div id="leaderboard"></div>
+<div id="gameUI"></div>
 
-    <div id="shop">
-        <b>🛒 Shop</b><br>
-        <button onclick="buyRod()">Upgrade Rod</button><br>
-        <button onclick="buyBait()">Buy Bait (5)</button>
+<!-- 🎣 FISHING GAME SCREEN -->
+<div id="fishingScreen">
+    <div id="fishingHeader">
+        <h2 id="playerName">Player Name</h2>
+        <div id="playerStats">Tokens: 0 | Rod Level: 1 | Bait: 0</div>
     </div>
-
-    <button onclick="cast()">🎣 Cast</button>
+    
+    <div id="fishingContent">
+        <div id="fishingArea">
+            <button id="castBtn" onclick="castLine()">🎣 Cast Line</button>
+            <div id="fishResult">
+                <p>Cast your line to start fishing!</p>
+            </div>
+        </div>
+        
+        <div id="sidePanel">
+            <div id="stats">
+                <h3>📊 Stats</h3>
+                <div id="statsContent">
+                    <p>Total Fish: 0</p>
+                    <p>Best Catch: None</p>
+                </div>
+            </div>
+            
+            <div id="shop">
+                <h3>🛒 Shop</h3>
+                <div id="shopContent"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-// ====== CONFIG (PUNYA KAMU) ======
+// CONFIG
 const STUDIONET_CHAIN_ID = "0xF22F";
 const RPC_URL = "https://studio.genlayer.com/api";
 
-// ====== STATE WALLET ======
+// 🎣 FISH SYSTEM
+const FISH_TYPES = {
+    // Common
+    'small_fish': { emoji: '🐟', name: 'Small Fish', tokens: 1, rarity: 'common' },
+    'sardine': { emoji: '🐠', name: 'Sardine', tokens: 1, rarity: 'common' },
+    'anchovy': { emoji: '🐡', name: 'Anchovy', tokens: 2, rarity: 'common' },
+    
+    // Rare
+    'dolphin': { emoji: '🐬', name: 'Dolphin', tokens: 5, rarity: 'rare' },
+    'tuna': { emoji: '🐠', name: 'Tuna', tokens: 4, rarity: 'rare' },
+    'octopus': { emoji: '🐙', name: 'Octopus', tokens: 6, rarity: 'rare' },
+    
+    // Epic
+    'shark': { emoji: '🦈', name: 'Shark', tokens: 12, rarity: 'epic' },
+    'whale': { emoji: '🐋', name: 'Whale', tokens: 15, rarity: 'epic' },
+    
+    // Legendary
+    'sea_dragon': { emoji: '🐉', name: 'Sea Dragon', tokens: 30, rarity: 'legendary' },
+    'golden_fish': { emoji: '👑', name: 'Golden Fish', tokens: 25, rarity: 'legendary' }
+};
+
+// 🛒 SHOP SYSTEM
+const SHOP_ITEMS = {
+    rod_upgrade: {
+        name: 'Rod Upgrade',
+        getCost: (level) => level * 20,
+        description: 'Upgrade fishing rod (Lv1→Lv2: 20, Lv2→Lv3: 40, Lv3→Lv4: 80)',
+        action: 'upgradeRod'
+    },
+    bait: {
+        name: 'Bait',
+        cost: 5,
+        description: 'Buy 3 bait (gives +1 token bonus)',
+        action: 'buyBait'
+    }
+};
+
+// STATE
 let userAddress = null;
 let isConnected = false;
+let playerData = {
+    nickname: '',
+    tokens: 0,
+    rodLevel: 1,
+    bait: 0,
+    totalFish: 0,
+    bestCatch: null
+};
 
-// ====== ELEMENT ======
+// ELEMENTS
 const walletBtn = document.getElementById('walletBtn');
 const startBtn = document.getElementById('startBtn');
 const nicknameInput = document.getElementById('nicknameInput');
 const gameUI = document.getElementById('gameUI');
 const status = document.getElementById('status');
+const fishingScreen = document.getElementById('fishingScreen');
+const castBtn = document.getElementById('castBtn');
 
-// ====== STATUS ======
+// STATUS
 function showStatus(message, type = '') {
     status.textContent = message;
     status.className = type;
     status.style.display = 'block';
-    setTimeout(()=>status.style.display='none',3000);
+    
+    if (type === 'success') {
+        setTimeout(() => status.style.display = 'none', 3000);
+    }
 }
 
-// ====== WALLET ======
+// WALLET
 async function connectWallet() {
     if (!window.ethereum) {
         showStatus('MetaMask not found', 'error');
         return;
     }
-
+    
     try {
         const chain = await window.ethereum.request({ method: 'eth_chainId' });
         if (chain !== STUDIONET_CHAIN_ID) {
@@ -186,6 +377,7 @@ async function connectWallet() {
     }
 }
 
+// NETWORK
 async function switchToStudioNet() {
     try {
         await window.ethereum.request({
@@ -208,39 +400,9 @@ async function switchToStudioNet() {
     }
 }
 
-// ====== 🎮 GAME SYSTEM (DITAMBAHKAN) ======
-let nickname = "";
-let tokens = 0;
-let rodLevel = 1;
-let bait = 0;
-let leaderboard = [];
-
-const fishTable = [
-    {name:"🐟 Small Fish", chance:0.25, value:1},
-    {name:"🐠 Sardine", chance:0.2, value:1},
-    {name:"🐡 Anchovy", chance:0.15, value:2},
-    {name:"🐬 Dolphin", chance:0.12, value:5},
-    {name:"🐠 Tuna", chance:0.1, value:4},
-    {name:"🐙 Octopus", chance:0.08, value:6},
-    {name:"🦈 Shark", chance:0.06, value:12},
-    {name:"🐋 Whale", chance:0.03, value:15},
-    {name:"🐉 Sea Dragon", chance:0.008, value:30},
-    {name:"👑 Golden Fish", chance:0.012, value:25}
-];
-
-// CANVAS
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-
-let hookY = 0;
-let casting = false;
-
-// START GAME
+// 🎣 GAME FUNCTIONS
 function startGame() {
-    nickname = nicknameInput.value.trim();
-
+    const nickname = nicknameInput.value.trim();
     if (!nickname) {
         showStatus('Enter nickname', 'error');
         return;
@@ -251,130 +413,196 @@ function startGame() {
         return;
     }
 
+    playerData.nickname = nickname;
+    showFishingScreen();
+}
+
+function showFishingScreen() {
     document.querySelector('.center-box').style.display = 'none';
-    gameUI.style.display = 'block';
-
-    updateHUD();
-    gameLoop();
+    fishingScreen.style.display = 'block';
+    
+    document.getElementById('playerName').textContent = `${playerData.nickname}'s Fishing Game`;
+    updateStats();
+    updateShop();
 }
 
-// HUD
-function updateHUD() {
-    document.getElementById("hud").innerHTML =
-        `👤 ${nickname}<br>🪙 ${tokens}<br>🎣 Lv.${rodLevel}<br>🪱 ${bait}`;
+function updateStats() {
+    document.getElementById('playerStats').textContent = 
+        `Tokens: ${playerData.tokens} | Rod Level: ${playerData.rodLevel} | Bait: ${playerData.bait}`;
+    
+    document.getElementById('statsContent').innerHTML = `
+        <p>Total Fish: ${playerData.totalFish}</p>
+        <p>Best Catch: ${playerData.bestCatch || 'None'}</p>
+    `;
 }
 
-// CAST
-function cast() {
-    if (casting) return;
+function updateShop() {
+    const shopContent = document.getElementById('shopContent');
+    
+    // Rod upgrade
+    const rodUpgradeCost = SHOP_ITEMS.rod_upgrade.getCost(playerData.rodLevel);
+    const canUpgradeRod = playerData.tokens >= rodUpgradeCost && playerData.rodLevel < 4;
+    
+    // Bait
+    const canBuyBait = playerData.tokens >= SHOP_ITEMS.bait.cost;
+    
+    shopContent.innerHTML = `
+        <div class="shop-item">
+            <div>
+                <strong>🎣 Rod Upgrade Lv${playerData.rodLevel}→${playerData.rodLevel + 1}</strong><br>
+                <small>${rodUpgradeCost} tokens</small>
+            </div>
+            <button onclick="upgradeRod()" ${!canUpgradeRod ? 'disabled' : ''}>
+                ${canUpgradeRod ? 'Upgrade' : 'Insufficient'}
+            </button>
+        </div>
+        
+        <div class="shop-item">
+            <div>
+                <strong>🪱 Bait (3x)</strong><br>
+                <small>${SHOP_ITEMS.bait.cost} tokens (+1 token bonus)</small>
+            </div>
+            <button onclick="buyBait()" ${!canBuyBait ? 'disabled' : ''}>
+                ${canBuyBait ? 'Buy' : 'Insufficient'}
+            </button>
+        </div>
+    `;
+}
 
-    casting = true;
-    hookY = 0;
-
-    let speed = 10 + rodLevel * 2;
-
-    let interval = setInterval(()=>{
-        hookY += speed;
-
-        if (hookY > canvas.height/2) {
-            clearInterval(interval);
-            catchFish();
+// 🎣 CAST LINE
+function castLine() {
+    if (playerData.bait > 0) {
+        playerData.bait--;
+        updateStats();
+    }
+    
+    castBtn.disabled = true;
+    castBtn.textContent = '🎣 Fishing...';
+    
+    const fishResult = document.getElementById('fishResult');
+    fishResult.innerHTML = '<p>🎣 Fishing... Wait for a bite!</p>';
+    
+    // Simulate fishing time (2-4 seconds)
+    const fishingTime = 2000 + Math.random() * 2000;
+    
+    setTimeout(() => {
+        const caughtFish = catchFish();
+        displayFish(caughtFish);
+        
+        // Add tokens
+        const tokenBonus = playerData.bait > 0 ? 1 : 0;
+        const totalTokens = caughtFish.tokens + tokenBonus;
+        playerData.tokens += totalTokens;
+        
+        // Update stats
+        playerData.totalFish++;
+        if (!playerData.bestCatch || caughtFish.tokens > playerData.bestCatch.tokens) {
+            playerData.bestCatch = caughtFish;
         }
-    },30);
+        
+        // Update UI
+        updateStats();
+        updateShop();
+        
+        // Reset button
+        castBtn.disabled = false;
+        castBtn.textContent = '🎣 Cast Line';
+        
+        showStatus(`Caught ${caughtFish.name}! +${totalTokens} tokens`, 'success');
+    }, fishingTime);
 }
 
-// CATCH
 function catchFish() {
-    setTimeout(()=>{
-        let rand = Math.random();
-        let cumulative = 0;
-        let fish = fishTable[0];
-
-        for (let f of fishTable) {
-            cumulative += f.chance;
-            if (rand <= cumulative) {
-                fish = f;
-                break;
-            }
-        }
-
-        let bonus = bait > 0 ? 1 : 0;
-        if (bait > 0) bait--;
-
-        let earn = fish.value + bonus;
-        tokens += earn;
-
-        showStatus(`${fish.name} +${earn} 🪙`, 'success');
-
-        casting = false;
-        updateHUD();
-        updateLeaderboard();
-    },1000);
-}
-
-// DRAW
-function gameLoop(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    ctx.beginPath();
-    ctx.moveTo(canvas.width/2,0);
-    ctx.lineTo(canvas.width/2,hookY);
-    ctx.strokeStyle="white";
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(canvas.width/2,hookY,8,0,Math.PI*2);
-    ctx.fillStyle="red";
-    ctx.fill();
-
-    requestAnimationFrame(gameLoop);
-}
-
-// LEADERBOARD
-function updateLeaderboard(){
-    let p = leaderboard.find(x=>x.name===nickname);
-
-    if(!p) leaderboard.push({name:nickname,score:tokens});
-    else p.score = tokens;
-
-    leaderboard.sort((a,b)=>b.score-a.score);
-
-    let html="<b>🏆 Leaderboard</b><br>";
-    leaderboard.slice(0,5).forEach(p=>{
-        html+=`${p.name}: ${p.score}<br>`;
+    // Drop rates based on rod level
+    const dropRates = {
+        common: 0.6 - (playerData.rodLevel * 0.05), // Better rods catch fewer common fish
+        rare: 0.25 + (playerData.rodLevel * 0.03),
+        epic: 0.1 + (playerData.rodLevel * 0.02),
+        legendary: 0.05 + (playerData.rodLevel * 0.01)
+    };
+    
+    // Normalize drop rates
+    const total = Object.values(dropRates).reduce((a, b) => a + b, 0);
+    Object.keys(dropRates).forEach(key => {
+        dropRates[key] = dropRates[key] / total;
     });
-
-    document.getElementById("leaderboard").innerHTML=html;
+    
+    // Select rarity
+    const random = Math.random();
+    let cumulative = 0;
+    let selectedRarity = 'common';
+    
+    for (const [rarity, rate] of Object.entries(dropRates)) {
+        cumulative += rate;
+        if (random <= cumulative) {
+            selectedRarity = rarity;
+            break;
+        }
+    }
+    
+    // Select fish from rarity
+    const fishOfRarity = Object.entries(FISH_TYPES).filter(([_, fish]) => fish.rarity === selectedRarity);
+    const selectedFish = fishOfRarity[Math.floor(Math.random() * fishOfRarity.length)][1];
+    
+    return selectedFish;
 }
 
-// SHOP
-function buyRod(){
-    let cost = 20*Math.pow(2,rodLevel-1);
+function displayFish(fish) {
+    const fishResult = document.getElementById('fishResult');
+    fishResult.innerHTML = `
+        <div class="fish-emoji">${fish.emoji}</div>
+        <h3>${fish.name}</h3>
+        <p>Rarity: ${fish.rarity}</p>
+        <p>Tokens: +${fish.tokens}</p>
+        ${playerData.bait > 0 ? '<p>🪱 Bait Bonus: +1 token</p>' : ''}
+    `;
+}
 
-    if(tokens>=cost){
-        tokens-=cost;
-        rodLevel++;
-        showStatus("Rod upgraded!", "success");
-        updateHUD();
-    } else {
-        showStatus("Not enough tokens", "error");
+// 🛒 SHOP ACTIONS
+function upgradeRod() {
+    const cost = SHOP_ITEMS.rod_upgrade.getCost(playerData.rodLevel);
+    
+    if (playerData.tokens >= cost && playerData.rodLevel < 4) {
+        playerData.tokens -= cost;
+        playerData.rodLevel++;
+        
+        updateStats();
+        updateShop();
+        showStatus(`Rod upgraded to Level ${playerData.rodLevel}!`, 'success');
     }
 }
 
-function buyBait(){
-    if(tokens>=5){
-        tokens-=5;
-        bait+=3;
-        showStatus("Bait +3", "success");
-        updateHUD();
-    } else {
-        showStatus("Not enough tokens", "error");
+function buyBait() {
+    const cost = SHOP_ITEMS.bait.cost;
+    
+    if (playerData.tokens >= cost) {
+        playerData.tokens -= cost;
+        playerData.bait += 3;
+        
+        updateStats();
+        updateShop();
+        showStatus('Bought 3 bait! +1 token bonus per catch', 'success');
     }
 }
 
 // EVENTS
 walletBtn.addEventListener('click', connectWallet);
 startBtn.addEventListener('click', startGame);
+
+// WALLET EVENT LISTENERS
+if (window.ethereum) {
+    window.ethereum.on('accountsChanged', (accounts) => {
+        if (accounts.length > 0) {
+            userAddress = accounts[0];
+            walletBtn.textContent = `🦊 ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
+        } else {
+            userAddress = null;
+            isConnected = false;
+            walletBtn.textContent = 'Connect Wallet';
+            walletBtn.style.background = '#00cfff';
+        }
+    });
+}
 </script>
 
 </body>
