@@ -530,6 +530,7 @@ async function handleConnect() {
     show("addressBadge");
     $("addressBadge").textContent = "🟢 " + shortAddr(userAddress);
     hide("connectScreen");
+    show("gameScreen");
     showStatus("Connected! Loading your data...", "success");
     
     // Load game data
@@ -559,8 +560,22 @@ async function handleConnect() {
   }
 }
 
+// Function to force MetaMask as the primary wallet provider
+function forceMetaMaskProvider() {
+  if (window.ethereum && window.ethereum.isMetaMask) {
+    console.log('MetaMask detected and forced as primary provider');
+    // Force MetaMask to be the primary provider
+    window.web3 = new Web3(window.ethereum);
+    return true;
+  }
+  return false;
+}
+
 window.addEventListener("load", () => {
   console.log('=== PAGE LOADED ===');
+  
+  // Force MetaMask as primary provider
+  forceMetaMaskProvider();
   
   // Bubbles
   const bg = $("oceanBg")
@@ -575,6 +590,13 @@ window.addEventListener("load", () => {
   // Check if MetaMask exists - NO AUTO-CONNECT
   if (window.ethereum) {
     console.log('MetaMask detected, waiting for manual connection...');
+    
+    // Ensure MetaMask is the primary provider
+    if (window.ethereum.isMetaMask) {
+      console.log('MetaMask confirmed as primary provider');
+    } else {
+      console.warn('MetaMask detected but not primary provider');
+    }
     
     // Set up event listeners FIRST
     window.ethereum.on("accountsChanged", accounts => {
@@ -886,25 +908,73 @@ async function handleCast() {
   btn.disabled = true
   water.classList.add("casting")
   showStatus("Casting line...")
+  
   try {
+    console.log('Starting cast transaction...')
     const hash = await writeContract("cast", [])
+    console.log('Cast transaction hash:', hash)
     showTx(hash)
     showStatus("Line cast! Waiting for validators...")
-    setTimeout(async () => {
-      await fetchStats()
-      if (playerStats?.recent_catches?.length > 0) {
-        const latest = playerStats.recent_catches[playerStats.recent_catches.length-1]
-        showCatch(latest)
+    
+    // Start checking for results more frequently
+    let checkCount = 0
+    const maxChecks = 30 // Check for 30 seconds
+    
+    const checkResult = async () => {
+      checkCount++
+      console.log(`Checking cast result... attempt ${checkCount}`)
+      
+      try {
+        await fetchStats()
+        if (playerStats?.recent_catches?.length > 0) {
+          const latest = playerStats.recent_catches[playerStats.recent_catches.length-1]
+          console.log('Cast result found:', latest)
+          showCatch(latest)
+          await fetchLeaderboard()
+          
+          // Reset UI
+          btn.textContent = "🎣 Cast Line"
+          btn.classList.remove("casting")
+          btn.disabled = false
+          water.classList.remove("casting")
+          casting = false
+          showStatus("")
+          return
+        }
+        
+        if (checkCount < maxChecks) {
+          // Check again in 1 second
+          setTimeout(checkResult, 1000)
+        } else {
+          // Timeout reached
+          console.error('Cast result timeout after 30 seconds')
+          showStatus("Cast timeout. Please try again.", "error")
+          btn.textContent = "🎣 Cast Line"
+          btn.classList.remove("casting")
+          btn.disabled = false
+          water.classList.remove("casting")
+          casting = false
+        }
+      } catch (error) {
+        console.error('Error checking cast result:', error)
+        if (checkCount < maxChecks) {
+          setTimeout(checkResult, 1000)
+        } else {
+          showStatus("Cast failed. Please try again.", "error")
+          btn.textContent = "🎣 Cast Line"
+          btn.classList.remove("casting")
+          btn.disabled = false
+          water.classList.remove("casting")
+          casting = false
+        }
       }
-      await fetchLeaderboard()
-      btn.textContent = "🎣 Cast Line"
-      btn.classList.remove("casting")
-      btn.disabled = false
-      water.classList.remove("casting")
-      casting = false
-      showStatus("","")
-    }, 15000)
+    }
+    
+    // Start checking after 2 seconds (initial delay for transaction)
+    setTimeout(checkResult, 2000)
+    
   } catch(e) {
+    console.error('Cast transaction error:', e)
     showStatus(e.message||"Cast failed","error")
     btn.textContent = "🎣 Cast Line"
     btn.classList.remove("casting")
