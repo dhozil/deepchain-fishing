@@ -261,7 +261,7 @@ html, body { height: 100%; background: var(--abyss); color: var(--text); font-fa
   </div>
 
   <div class="status-bar"><span class="status-msg" id="statusMsg"></span></div>
-  <div id="networkWarn" class="network-warn hidden">⚠ Wrong network. Please switch to GenLayer Studio (Chain ID: 61999)</div>
+  <div id="networkWarn" class="network-warn hidden">⚠ Wrong network. Please switch to GenLayer Studio (Chain ID: 0xF22F)</div>
 
   <!-- Connect screen -->
   <div class="center-screen" id="connectScreen">
@@ -269,7 +269,7 @@ html, body { height: 100%; background: var(--abyss); color: var(--text); font-fa
     <h2>Cast Your Line On-Chain</h2>
     <p>Connect your MetaMask wallet to start fishing. Every catch is recorded on GenLayer blockchain.</p>
     <button class="btn btn-cast" onclick="handleConnect()">Connect & Play</button>
-    <p style="font-size:0.78rem;color:var(--text-dim);font-style:italic">Network: GenLayer Studio · Chain ID: 61999</p>
+    <p style="font-size:0.78rem;color:var(--text-dim);font-style:italic">Network: GenLayer Studio · Chain ID: 0xF22F (61999)</p>
   </div>
 
   <!-- Register screen -->
@@ -392,7 +392,7 @@ html, body { height: 100%; background: var(--abyss); color: var(--text); font-fa
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const CONTRACT_ADDRESS = "0x43DB29E69cB000d26031F44D03eBeAa7a0eD03b0" // ← UPDATE THIS
-const STUDIONET_CHAIN_ID = "0xF23F" // 61999
+const STUDIONET_CHAIN_ID = "0xF22F" // 61999 - FIXED: GenLayer Studio
 const RPC_URL = "https://studio.genlayer.com/api"
 const EXPLORER_URL = "https://explorer-studio.genlayer.com"
 
