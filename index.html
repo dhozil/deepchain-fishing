@@ -266,7 +266,7 @@ html, body { height: 100%; background: var(--abyss); color: var(--text); font-fa
   <div class="center-screen" id="connectScreen">
     <div style="font-size:4rem">🎣</div>
     <h2>Cast Your Line On-Chain</h2>
-    <p>Connect your MetaMask wallet to start fishing. Every catch is recorded on the GenLayer blockchain.</p>
+    <p>Connect your MetaMask wallet to start fishing. Every catch is recorded on GenLayer blockchain.</p>
     <button class="btn btn-cast" onclick="handleConnect()">Connect & Play</button>
     <p style="font-size:0.78rem;color:var(--text-dim);font-style:italic">Network: GenLayer Studio · Chain ID: 61999</p>
   </div>
@@ -413,7 +413,7 @@ let playerStats = null
 let casting = false
 
 // ── UTILS ────────────────────────────────────────────────────────────────────
-const shortAddr = a => `${a.slice(0,6)}...${a.slice(-4)}`
+const shortAddr = a => `${a.slice(0,6)}...${a.slice(-4)}` 
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
 function showStatus(msg, type = "") {
@@ -477,14 +477,15 @@ window.addEventListener("load", () => {
     const b = document.createElement("div")
     b.className = "bubble"
     const size = 4 + (i % 3) * 6
-    b.style.cssText = `left:${10+i*12}%;width:${size}px;height:${size}px;animation-duration:${8+i*2}s;animation-delay:${i*1.5}s`
+    b.style.cssText = `left:${10+i*12}%;width:${size}px;height:${size}px;animation-duration:${8+i*2}s;animation-delay:${i*1.5}s` 
     bg.appendChild(b)
   }
 
-  // Check if already connected
+  // Check if already connected - FIXED: Only show if user actually connects
   if (window.ethereum) {
     window.ethereum.request({method:"eth_accounts"}).then(accounts => {
-      if (accounts.length > 0) {
+      // FIXED: Don't auto-connect, only check if already connected
+      if (accounts.length > 0 && window.ethereum.selectedAddress) {
         userAddress = accounts[0]
         $("connectBtn").classList.add("hidden")
         show("addressBadge")
@@ -494,7 +495,19 @@ window.addEventListener("load", () => {
       }
     })
     window.ethereum.on("accountsChanged", accounts => {
-      if (accounts.length > 0) { userAddress = accounts[0]; fetchStats() }
+      if (accounts.length > 0) { 
+        userAddress = accounts[0]
+        fetchStats() 
+      } else {
+        // User disconnected - reset to connect screen
+        userAddress = null
+        playerStats = null
+        $("connectBtn").classList.remove("hidden")
+        hide("addressBadge")
+        show("connectScreen")
+        hide("gameScreen")
+        hide("registerScreen")
+      }
     })
     window.ethereum.on("chainChanged", () => window.location.reload())
   }
@@ -507,7 +520,7 @@ async function readContract(fn, args = []) {
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({
       jsonrpc:"2.0", method:"gen_call",
-      params:[{ to:CONTRACT_ADDRESS, data:{function:fn, args} }, "latest"],
+      params:[{ to: CONTRACT_ADDRESS, data:{function:fn, args} }, "latest"],
       id:1
     })
   })
@@ -557,7 +570,7 @@ async function fetchLeaderboard() {
     const entries = JSON.parse(raw)
     const list = $("lbList")
     if (entries.length === 0) {
-      list.innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No entries yet. Be the first!</p>`
+      list.innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No entries yet. Be the first!</p>` 
       return
     }
     const rankClass = i => i===0?"gold-rank":i===1?"silver-rank":i===2?"bronze-rank":""
@@ -601,8 +614,8 @@ function renderShop() {
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
         <div class="shop-item-price">${info.price===0?"Free":info.price+" pts"}</div>
         ${owned
-          ? `<button class="btn btn-equip${equipped?" active":""}" onclick="handleEquipRod('${key}')" ${equipped?"disabled":""}>${equipped?"Equipped":"Equip"}</button>`
-          : `<button class="btn btn-buy" onclick="handleBuyRod('${key}')" ${!canBuy?"disabled":""}>Buy</button>`
+          ? `<button class="btn btn-equip${equipped?" active":""}" onclick="handleEquipRod('${key}')" ${equipped?"disabled":""}>${equipped?"Equipped":"Equip"}</button>` 
+          : `<button class="btn btn-buy" onclick="handleBuyRod('${key}')" ${!canBuy?"disabled":""}>Buy</button>` 
         }
       </div>
     </div>`
@@ -621,8 +634,8 @@ function renderShop() {
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
         <div class="shop-item-price">${info.price} pts</div>
         ${equipped
-          ? `<span style="font-family:var(--font-display);font-size:0.62rem;color:var(--teal)">Ready</span>`
-          : `<button class="btn btn-buy" onclick="handleBuyBait('${key}')" ${!canBuy?"disabled":""}>Buy</button>`
+          ? `<span style="font-family:var(--font-display);font-size:0.62rem;color:var(--teal)">Ready</span>` 
+          : `<button class="btn btn-buy" onclick="handleBuyBait('${key}')" ${!canBuy?"disabled":""}>Buy</button>` 
         }
       </div>
     </div>`
@@ -646,7 +659,7 @@ function renderInventory() {
   // Active bait
   const bait = playerStats.bait
   $("invBait").innerHTML = bait === "none"
-    ? `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem">No bait equipped. Buy from the shop.</p>`
+    ? `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem">No bait equipped. Buy from shop.</p>` 
     : `<div class="shop-item owned">
         <div class="shop-item-icon">${BAIT_INFO[bait]?.icon||"🪝"}</div>
         <div class="shop-item-info">
@@ -660,7 +673,7 @@ function renderInventory() {
 function renderCatches() {
   const catches = [...(playerStats.recent_catches||[])].reverse()
   if (catches.length === 0) {
-    $("catchesList").innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No catches yet. Cast your line!</p>`
+    $("catchesList").innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No catches yet. Cast your line!</p>` 
     return
   }
   $("catchesList").innerHTML = catches.map(c => `
@@ -767,7 +780,7 @@ async function handleEquipRod(rodType) {
 function showTx(hash) {
   const el = $("txStatus")
   el.classList.remove("hidden")
-  el.innerHTML = `TX: <a href="${EXPLORER_URL}/transactions/${hash}" target="_blank">${shortAddr(hash)}</a>`
+  el.innerHTML = `TX: <a href="${EXPLORER_URL}/transactions/${hash}" target="_blank">${shortAddr(hash)}</a>` 
 }
 
 // ── TABS ─────────────────────────────────────────────────────────────────────
