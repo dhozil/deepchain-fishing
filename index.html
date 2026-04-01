@@ -530,8 +530,8 @@ async function handleConnect() {
     show("addressBadge");
     $("addressBadge").textContent = "🟢 " + shortAddr(userAddress);
     hide("connectScreen");
-    show("gameScreen");
-    showStatus("Connected! Loading your data...", "success");
+    await fetchStats(); // biar dia yang decide screen
+    showStatus("Waiting for blockchain confirmation...");
     
     // Load game data
     await fetchStats();
@@ -719,7 +719,10 @@ async function writeContract(fn, args) {
 async function fetchStats() {
   try {
     const raw = await readContract("get_stats", [userAddress])
-    if (!raw) return
+    if (!raw) {
+  console.log("No data from contract yet")
+  return
+}
     playerStats = JSON.parse(raw)
     const isRegistered = playerStats.name && playerStats.name !== "Unknown" && playerStats.name !== ""
     if (!isRegistered) {
@@ -739,7 +742,10 @@ async function fetchStats() {
 async function fetchLeaderboard() {
   try {
     const raw = await readContract("get_leaderboard", [])
-    if (!raw) return
+    if (!raw) {
+  console.log("No data from contract yet")
+  return
+}
     const entries = JSON.parse(raw)
     const list = $("lbList")
     if (entries.length === 0) {
@@ -886,11 +892,27 @@ async function handleRegister() {
     showTx(hash)
     
     // Wait for transaction confirmation then refresh stats
-    setTimeout(async () => { 
-      console.log('Fetching stats after registration...')
-      await fetchStats(); 
-      showStatus("", "")
-    }, 8000)
+  let attempts = 0
+  const maxAttempts = 20
+
+  const checkRegistered = async () => {
+    attempts++
+    await fetchStats()
+
+    if (playerStats?.name && playerStats.name !== "Unknown") {
+    showStatus("Registration success!", "success")
+    return
+  }
+
+  if (attempts < maxAttempts) {
+    setTimeout(checkRegistered, 1500)
+  } else {
+    showStatus("Registration timeout. Try again.", "error")
+    $("registerBtn").disabled = false
+  }
+}
+
+setTimeout(checkRegistered, 2000)
   } catch(e) {
     console.error('Registration error:', e)
     showStatus(e.message||"Registration failed","error")
