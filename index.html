@@ -256,7 +256,8 @@ html, body { height: 100%; background: var(--abyss); color: var(--text); font-fa
 
   <div class="wallet-bar">
     <div id="addressBadge" class="address-badge hidden"></div>
-    <button class="btn btn-primary" id="connectBtn" onclick="handleConnect()">Connect Wallet</button>
+    <button class="btn btn-primary" id="connectBtn" onclick="handleConnect()">🦊 Connect MetaMask</button>
+    <button class="btn btn-sm" onclick="openMetaMask()">📥 Install MetaMask</button>
   </div>
 
   <div class="status-bar"><span class="status-msg" id="statusMsg"></span></div>
@@ -416,6 +417,10 @@ let casting = false
 const shortAddr = a => `${a.slice(0,6)}...${a.slice(-4)}` 
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
+function openMetaMask() {
+  window.open('https://metamask.io/download/', '_blank');
+}
+
 function showStatus(msg, type = "") {
   const el = document.getElementById("statusMsg")
   el.textContent = msg
@@ -429,48 +434,134 @@ function hide(id) { $(id).classList.add("hidden") }
 
 // ── METAMASK / NETWORK ───────────────────────────────────────────────────────
 async function addStudioNet() {
-  await window.ethereum.request({
-    method: "wallet_addEthereumChain",
-    params: [{
-      chainId: STUDIONET_CHAIN_ID,
-      chainName: "GenLayer Studio",
-      nativeCurrency: { name:"GEN", symbol:"GEN", decimals:18 },
-      rpcUrls: [RPC_URL],
-      blockExplorerUrls: [EXPLORER_URL],
-    }]
-  })
+  if (!window.ethereum) {
+    alert('MetaMask not found. Please install MetaMask to continue.');
+    return;
+  }
+  
+  try {
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: STUDIONET_CHAIN_ID,
+        chainName: "GenLayer Studio",
+        nativeCurrency: { name:"GEN", symbol:"GEN", decimals:18 },
+        rpcUrls: [RPC_URL],
+        blockExplorerUrls: [EXPLORER_URL],
+      }]
+    });
+    showStatus("GenLayer Studio network added!", "success");
+  } catch (error) {
+    console.error('Error adding network:', error);
+    if (error.code === 4001) {
+      showStatus("Request rejected. Please try again.", "error");
+    } else {
+      showStatus("Failed to add network: " + error.message, "error");
+    }
+  }
 }
 
 async function switchToStudioNet() {
+  if (!window.ethereum) {
+    alert('MetaMask not found. Please install MetaMask to continue.');
+    return;
+  }
+  
   try {
-    await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:STUDIONET_CHAIN_ID}] })
-  } catch(e) {
-    if (e.code === 4902) await addStudioNet()
-    else throw e
+    await window.ethereum.request({ 
+      method:"wallet_switchEthereumChain", 
+      params:[{chainId:STUDIONET_CHAIN_ID}] 
+    });
+    showStatus("Switched to GenLayer Studio!", "success");
+  } catch (e) {
+    console.error('Switch error:', e);
+    if (e.code === 4902) {
+      // Network doesn't exist, add it
+      showStatus("Adding GenLayer Studio network...", "info");
+      await addStudioNet();
+    } else if (e.code === 4001) {
+      showStatus("Switch rejected by user.", "error");
+    } else {
+      showStatus("Failed to switch: " + e.message, "error");
+    }
   }
 }
 
 async function handleConnect() {
-  if (!window.ethereum) return showStatus("MetaMask not found. Please install it.", "error")
+  console.log('=== WALLET CONNECTION START ===');
+  
+  // Check if MetaMask exists
+  if (!window.ethereum) {
+    showStatus("MetaMask not found. Please install MetaMask.", "error");
+    alert('🦊 MetaMask Required\n\nPlease install MetaMask browser extension to continue.\n\nDownload: https://metamask.io/download/');
+    return;
+  }
+  
   try {
-    showStatus("Connecting wallet...")
-    await switchToStudioNet()
-    const accounts = await window.ethereum.request({ method:"eth_requestAccounts" })
-    userAddress = accounts[0]
-    $("connectBtn").classList.add("hidden")
-    show("addressBadge")
-    $("addressBadge").textContent = "🟢 " + shortAddr(userAddress)
-    hide("connectScreen")
-    showStatus("Connected! Loading your data...")
-    await fetchStats()
-    await fetchLeaderboard()
-    showStatus("", "")
-  } catch(e) {
-    showStatus(e.message || "Connection failed", "error")
+    showStatus("Connecting wallet...");
+    console.log('Step 1: Checking current network...');
+    
+    // Get current chain first
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    console.log('Current chain:', currentChainId);
+    
+    // Check if we're on the right network
+    if (currentChainId !== STUDIONET_CHAIN_ID) {
+      console.log('Wrong network, switching to GenLayer Studio...');
+      showStatus("Switching to GenLayer Studio network...", "info");
+      await switchToStudioNet();
+    }
+    
+    console.log('Step 2: Requesting accounts...');
+    // Request accounts with proper error handling
+    const accounts = await window.ethereum.request({ method:"eth_requestAccounts" });
+    
+    if (!accounts || accounts.length === 0) {
+      showStatus("No accounts found. Please unlock MetaMask.", "error");
+      alert('🔓 No Accounts Found\n\nPlease unlock your MetaMask wallet and try again.');
+      return;
+    }
+    
+    console.log('Step 3: Account received:', accounts[0]);
+    userAddress = accounts[0];
+    
+    // Update UI
+    $("connectBtn").classList.add("hidden");
+    show("addressBadge");
+    $("addressBadge").textContent = "🟢 " + shortAddr(userAddress);
+    hide("connectScreen");
+    showStatus("Connected! Loading your data...", "success");
+    
+    // Load game data
+    await fetchStats();
+    await fetchLeaderboard();
+    showStatus("", "");
+    
+    console.log('=== WALLET CONNECTION SUCCESS ===');
+    
+  } catch (error) {
+    console.error('Connection error:', error);
+    let errorMessage = "Connection failed";
+    
+    // Handle specific MetaMask errors
+    if (error.code === 4001) {
+      errorMessage = "Connection rejected by user";
+    } else if (error.code === -32002) {
+      errorMessage = "Request already pending. Please check MetaMask.";
+    } else if (error.code === -32603) {
+      errorMessage = "No active wallet found. Please unlock MetaMask.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    showStatus(errorMessage, "error");
+    alert('🔌 Connection Failed\n\n' + errorMessage + '\n\nPlease try again.');
   }
 }
 
 window.addEventListener("load", () => {
+  console.log('=== PAGE LOADED ===');
+  
   // Bubbles
   const bg = $("oceanBg")
   for (let i = 0; i < 8; i++) {
@@ -481,25 +572,20 @@ window.addEventListener("load", () => {
     bg.appendChild(b)
   }
 
-  // Check if already connected - FIXED: Only show if user actually connects
+  // Check if MetaMask exists - NO AUTO-CONNECT
   if (window.ethereum) {
-    window.ethereum.request({method:"eth_accounts"}).then(accounts => {
-      // FIXED: Don't auto-connect, only check if already connected
-      if (accounts.length > 0 && window.ethereum.selectedAddress) {
-        userAddress = accounts[0]
-        $("connectBtn").classList.add("hidden")
-        show("addressBadge")
-        $("addressBadge").textContent = "🟢 " + shortAddr(userAddress)
-        hide("connectScreen")
-        fetchStats().then(() => fetchLeaderboard())
-      }
-    })
+    console.log('MetaMask detected, waiting for manual connection...');
+    
+    // Set up event listeners FIRST
     window.ethereum.on("accountsChanged", accounts => {
+      console.log('Accounts changed:', accounts);
       if (accounts.length > 0) { 
         userAddress = accounts[0]
-        fetchStats() 
+        console.log('User connected, fetching stats...');
+        fetchStats().then(() => fetchLeaderboard())
       } else {
-        // User disconnected - reset to connect screen
+        // User disconnected - CLEAN RESET
+        console.log('User disconnected, resetting...');
         userAddress = null
         playerStats = null
         $("connectBtn").classList.remove("hidden")
@@ -507,9 +593,40 @@ window.addEventListener("load", () => {
         show("connectScreen")
         hide("gameScreen")
         hide("registerScreen")
+        showStatus("Wallet disconnected. Please reconnect to play.", "info")
       }
     })
-    window.ethereum.on("chainChanged", () => window.location.reload())
+    
+    window.ethereum.on("chainChanged", (chainId) => {
+      console.log('Chain changed to:', chainId);
+      if (chainId !== STUDIONET_CHAIN_ID) {
+        showStatus("Wrong network! Please switch to GenLayer Studio.", "error");
+        hide("gameScreen")
+        show("connectScreen")
+      } else {
+        showStatus("", "")
+        if (userAddress) {
+          fetchStats().then(() => fetchLeaderboard())
+        }
+      }
+    })
+    
+    // Check if already connected but DON'T AUTO-CONNECT
+    window.ethereum.request({method:"eth_accounts"}).then(accounts => {
+      console.log('Initial accounts check:', accounts);
+      if (accounts.length > 0) {
+        // User has MetaMask unlocked but we DON'T auto-connect
+        console.log('MetaMask is unlocked but waiting for manual connection...');
+        // Keep connect screen visible
+      } else {
+        console.log('MetaMask is locked');
+      }
+    }).catch(error => {
+      console.error('Initial accounts check failed:', error);
+    })
+  } else {
+    console.log('MetaMask not detected');
+    showStatus("MetaMask not found. Please install MetaMask extension.", "error");
   }
 })
 
