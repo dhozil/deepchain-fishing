@@ -15,11 +15,17 @@ html, body {
 
 /* BACKGROUND */
 body {
+    background: url('banner.png') no-repeat center center;
+    background-size: cover;
+}
+
+/* FISHING GAME BACKGROUND (hanya saat game aktif) */
+body.fishing-active {
     background: linear-gradient(to bottom, #87CEEB 0%, #1e3c72 50%, #0a1929 100%);
     background-attachment: fixed;
 }
 
-/* OCEAN WAVES */
+/* OCEAN WAVES (hidden saat register) */
 .ocean-waves {
     position: absolute;
     bottom: 0;
@@ -28,6 +34,12 @@ body {
     height: 200px;
     background: linear-gradient(to bottom, rgba(30,60,114,0.3), rgba(10,25,41,0.8));
     overflow: hidden;
+    display: none; /* Hidden saat register */
+}
+
+/* Show ocean waves saat fishing active */
+body.fishing-active .ocean-waves {
+    display: block;
 }
 
 .wave {
@@ -57,7 +69,7 @@ body {
     100% { transform: translateX(-50%); }
 }
 
-/* CLOUDS */
+/* CLOUDS (hidden saat register) */
 .clouds {
     position: absolute;
     top: 20px;
@@ -65,6 +77,12 @@ body {
     width: 100%;
     height: 150px;
     overflow: hidden;
+    display: none; /* Hidden saat register */
+}
+
+/* Show clouds saat fishing active */
+body.fishing-active .clouds {
+    display: block;
 }
 
 .cloud {
@@ -215,7 +233,7 @@ button {
     text-align: center;
 }
 
-/* LEADERBOARD */
+/* LEADERBOARD (hidden saat register) */
 #leaderboard {
     position: absolute;
     top: 70px;
@@ -228,6 +246,12 @@ button {
     z-index: 15;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.1);
+    display: none; /* Hidden saat register */
+}
+
+/* Show leaderboard saat fishing active */
+body.fishing-active #leaderboard {
+    display: block;
 }
 
 #leaderboard h3 {
@@ -724,6 +748,9 @@ function showFishingScreen() {
     document.querySelector('.center-box').style.display = 'none';
     fishingScreen.style.display = 'block';
     
+    // 🔥 AKTIFKAN FISHING BACKGROUND
+    document.body.classList.add('fishing-active');
+    
     document.getElementById('playerName').textContent = `${playerData.nickname}'s Fishing Game`;
     updateStats();
     updateShop();
@@ -901,10 +928,13 @@ startBtn.addEventListener('click', startGame);
 window.addEventListener('load', () => {
     console.log('Page loaded, initializing game...');
     
+    // 🔥 PASTIKAN REGISTER BACKGROUND (tidak fishing background)
+    document.body.classList.remove('fishing-active');
+    
     // Load saved game data
     loadGameData();
     
-    // Render leaderboard immediately
+    // Render leaderboard immediately (tapi hidden)
     renderLeaderboard();
     
     // Check wallet connection
