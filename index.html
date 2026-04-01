@@ -650,20 +650,24 @@ async function writeContract(fn, args) {
   if (!window.ethereum) throw new Error("MetaMask not found")
   
   try {
-    // Encode function call properly for GenLayer
-    const functionData = {
+    // Create function call data for GenLayer Studio
+    const functionCall = {
       function: fn,
       args: args
     }
     
-    console.log('Sending transaction:', functionData)
+    // Convert to JSON string
+    const dataString = JSON.stringify(functionCall)
+    console.log('Function call data:', functionCall)
+    console.log('Data string:', dataString)
     
+    // Send transaction without 0x prefix for GenLayer Studio
     const txHash = await window.ethereum.request({
       method:"eth_sendTransaction",
       params:[{
         from: userAddress,
         to: CONTRACT_ADDRESS,
-        data: JSON.stringify(functionData)
+        data: dataString  // Plain JSON string, not hex
       }]
     })
     
