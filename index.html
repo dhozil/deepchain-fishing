@@ -719,12 +719,16 @@ async function writeContract(fn, args) {
 async function fetchStats() {
   try {
     const raw = await readContract("get_stats", [userAddress])
-    if (!raw) {
-  console.log("No data from contract yet")
-  return
-}
+
+    console.log("RAW STATS:", raw)
+
+    if (!raw) return
+
     playerStats = JSON.parse(raw)
+    console.log("PARSED STATS:", playerStats)
+
     const isRegistered = playerStats.name && playerStats.name !== "Unknown" && playerStats.name !== ""
+
     if (!isRegistered) {
       show("registerScreen")
       hide("gameScreen")
@@ -734,11 +738,12 @@ async function fetchStats() {
       updateUI()
     }
   } catch(e) {
+    console.error("fetchStats error:", e)
     show("registerScreen")
     hide("gameScreen")
   }
 }
-
+  
 async function fetchLeaderboard() {
   try {
     const raw = await readContract("get_leaderboard", [])
