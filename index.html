@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeepChain Fishing 🎣</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --deep: #020818;
+  --abyss: #010610;
+  --ocean: #0a1628;
+  --blue: #0d3b6e;
+  --cyan: #00d4ff;
+  --cyan-dim: #0097b8;
+  --teal: #00ffcc;
+  --gold: #ffd700;
+  --gold-dim: #b8960a;
+  --text: #c8e0f0;
+  --text-dim: #5a7a9a;
+  --rare: #a855f7;
+  --legendary: #ffd700;
+  --common: #64748b;
+  --uncommon: #22c55e;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+}
+
+html, body { height: 100%; background: var(--abyss); color: var(--text); font-family: var(--font-body); font-size: 17px; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--abyss); }
+::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
+
+/* Ocean BG */
+.ocean-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse at 20% 50%, #0a2040 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, #051525 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, #030f20 0%, transparent 60%),
+              var(--abyss);
+  overflow: hidden;
+}
+.ocean-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(0,212,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 60%, rgba(0,255,204,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 80%, rgba(0,212,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 10%, rgba(0,255,204,0.4) 0%, transparent 100%),
+    radial-gradient(2px 2px at 60% 40%, rgba(255,215,0,0.15) 0%, transparent 100%);
+  animation: shimmer 8s ease-in-out infinite alternate;
+}
+@keyframes shimmer {
+  0% { opacity: 0.5; transform: translateY(0); }
+  100% { opacity: 1; transform: translateY(-10px); }
+}
+
+.bubble {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(0,212,255,0.3);
+  animation: rise linear infinite; pointer-events: none;
+}
+@keyframes rise {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* App */
+.app { position: relative; z-index: 1; min-height: 100vh; padding: 0 1rem 4rem; }
+
+.header { text-align: center; padding: 2rem 1rem 1.25rem; border-bottom: 1px solid rgba(0,212,255,0.15); }
+.header h1 {
+  font-family: var(--font-display); font-size: clamp(1.6rem, 5vw, 3rem);
+  font-weight: 700; letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--teal) 50%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 0.2rem;
+}
+.header p { font-style: italic; color: var(--text-dim); font-size: 0.9rem; letter-spacing: 0.05em; }
+
+.wallet-bar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding: 0.6rem 1rem; max-width: 1200px; margin: 0 auto; }
+.address-badge { font-family: var(--font-display); font-size: 0.68rem; letter-spacing: 0.05em; color: var(--cyan-dim); background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); padding: 0.35rem 0.8rem; border-radius: 999px; }
+
+/* Buttons */
+.btn { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border: none; border-radius: 4px; padding: 0.55rem 1.3rem; transition: all 0.2s; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: transparent; border: 1px solid var(--cyan); color: var(--cyan); }
+.btn-primary:hover:not(:disabled) { background: var(--cyan); color: var(--abyss); box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+.btn-cast { font-size: 1rem; padding: 0.9rem 2.5rem; background: transparent; border: 2px solid var(--teal); color: var(--teal); letter-spacing: 0.2em; }
+.btn-cast:hover:not(:disabled) { background: var(--teal); color: var(--abyss); box-shadow: 0 0 30px rgba(0,255,204,0.5); }
+.btn-cast.casting { animation: pulse-cast 1s ease-in-out infinite; }
+@keyframes pulse-cast {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,255,204,0.3); }
+  50% { box-shadow: 0 0 40px rgba(0,255,204,0.8); }
+}
+.btn-buy { font-size: 0.68rem; padding: 0.35rem 0.9rem; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); }
+.btn-buy:hover:not(:disabled) { background: var(--gold); color: var(--abyss); box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+.btn-equip { font-size: 0.62rem; padding: 0.3rem 0.75rem; background: transparent; border: 1px solid rgba(0,212,255,0.4); color: var(--cyan-dim); }
+.btn-equip:hover:not(:disabled) { background: rgba(0,212,255,0.1); }
+.btn-equip.active { border-color: var(--teal); color: var(--teal); }
+.btn-sm { font-size: 0.6rem; padding: 0.25rem 0.6rem; background: transparent; border: 1px solid rgba(0,212,255,0.3); color: var(--text-dim); }
+.btn-sm:hover { color: var(--cyan); border-color: var(--cyan); }
+
+/* Grid */
+.main-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 370px; gap: 1.25rem; padding: 1.25rem 0; }
+@media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
+
+/* Cards */
+.card { background: rgba(10,22,40,0.7); border: 1px solid rgba(0,212,255,0.12); border-radius: 8px; backdrop-filter: blur(10px); }
+.card-header { padding: 0.85rem 1.2rem 0.65rem; border-bottom: 1px solid rgba(0,212,255,0.1); font-family: var(--font-display); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cyan-dim); }
+.card-body { padding: 1.1rem; }
+
+/* Stats */
+.stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.65rem; }
+.stat-item { text-align: center; padding: 0.65rem; background: rgba(0,10,25,0.5); border: 1px solid rgba(0,212,255,0.1); border-radius: 6px; }
+.stat-label { font-family: var(--font-display); font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.25rem; }
+.stat-value { font-family: var(--font-display); font-size: 1.2rem; color: var(--cyan); }
+.stat-value.gold { color: var(--gold); }
+
+/* Equipment */
+.equip-bar { display: flex; gap: 0.65rem; }
+.equip-slot { flex:1; padding: 0.65rem; background: rgba(0,10,25,0.5); border: 1px solid rgba(0,212,255,0.1); border-radius:6px; text-align:center; }
+.equip-slot-label { font-family: var(--font-display); font-size: 0.58rem; letter-spacing: 0.12em; color: var(--text-dim); margin-bottom: 0.2rem; }
+.equip-slot-value { font-family: var(--font-display); font-size: 0.8rem; color: var(--text); text-transform: capitalize; }
+
+/* Water */
+.fishing-zone { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
+.water-surface { width:100%; height:160px; position:relative; overflow:hidden; border-radius:6px; background: linear-gradient(180deg, rgba(0,50,100,0.3) 0%, rgba(0,20,50,0.8) 100%); border: 1px solid rgba(0,212,255,0.2); }
+.water-line { position:absolute; top:30%; left:0; right:0; height:1px; background: linear-gradient(90deg, transparent, rgba(0,212,255,0.5), transparent); animation: wave 3s ease-in-out infinite; }
+@keyframes wave { 0%,100% { transform: translateY(0); opacity:0.5; } 50% { transform: translateY(3px); opacity:1; } }
+.fishing-line { position:absolute; top:0; left:50%; width:1px; height:60%; background: linear-gradient(180deg, rgba(200,224,240,0.6), rgba(0,212,255,0.3)); transform-origin: top center; }
+.hook { position:absolute; bottom:38%; left:50%; transform:translateX(-50%); width:8px; height:8px; border:1px solid var(--cyan); border-radius:0 0 4px 4px; border-top:none; }
+.fish-bg { position:absolute; font-size:1.8rem; animation: swim 6s ease-in-out infinite; opacity:0.5; }
+.fish-bg:nth-child(1) { bottom:15%; left:10%; animation-delay:0s; }
+.fish-bg:nth-child(2) { bottom:25%; left:60%; font-size:1.1rem; opacity:0.25; animation-delay:2s; }
+.fish-bg:nth-child(3) { bottom:8%; left:30%; font-size:1.3rem; opacity:0.3; animation-delay:4s; }
+@keyframes swim { 0%{transform:translateX(0) scaleX(1)} 25%{transform:translateX(20px) scaleX(1)} 50%{transform:translateX(40px) scaleX(-1)} 75%{transform:translateX(20px) scaleX(-1)} 100%{transform:translateX(0) scaleX(1)} }
+.casting .fishing-line { animation: cast-anim 1.5s ease-in-out infinite; }
+@keyframes cast-anim { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+
+/* Catch reveal */
+.catch-reveal { width:100%; min-height:80px; border-radius:6px; padding:1.1rem; text-align:center; border:1px solid rgba(0,212,255,0.15); background:rgba(0,10,25,0.5); animation:reveal-in 0.5s ease; display:none; }
+.catch-reveal.show { display:block; }
+@keyframes reveal-in { 0%{opacity:0;transform:translateY(10px) scale(0.95)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+.catch-reveal.empty { border-color: rgba(90,122,154,0.3); }
+.catch-reveal.common { border-color: rgba(100,116,139,0.5); }
+.catch-reveal.uncommon { border-color: rgba(34,197,94,0.5); box-shadow:0 0 20px rgba(34,197,94,0.1); }
+.catch-reveal.rare { border-color: rgba(168,85,247,0.6); box-shadow:0 0 25px rgba(168,85,247,0.2); }
+.catch-reveal.legendary { border-color: var(--gold); animation:reveal-in 0.5s ease, legendary-glow 2s ease-in-out infinite; }
+@keyframes legendary-glow { 0%,100%{box-shadow:0 0 40px rgba(255,215,0,0.3)} 50%{box-shadow:0 0 60px rgba(255,215,0,0.5)} }
+
+.rarity-badge { display:inline-block; font-family:var(--font-display); font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.18rem 0.55rem; border-radius:999px; margin-bottom:0.4rem; }
+.rarity-badge.empty { background:rgba(90,122,154,0.1); color:var(--text-dim); border:1px solid rgba(90,122,154,0.2); }
+.rarity-badge.common { background:rgba(100,116,139,0.2); color:var(--common); border:1px solid rgba(100,116,139,0.4); }
+.rarity-badge.uncommon { background:rgba(34,197,94,0.1); color:#22c55e; border:1px solid rgba(34,197,94,0.4); }
+.rarity-badge.rare { background:rgba(168,85,247,0.1); color:#a855f7; border:1px solid rgba(168,85,247,0.4); }
+.rarity-badge.legendary { background:rgba(255,215,0,0.1); color:var(--gold); border:1px solid rgba(255,215,0,0.4); }
+
+.catch-fish-name { font-family:var(--font-display); font-size:1.3rem; margin-bottom:0.2rem; }
+.catch-fish-name.empty { color:var(--text-dim); }
+.catch-fish-name.common { color:var(--text); }
+.catch-fish-name.uncommon { color:#22c55e; }
+.catch-fish-name.rare { color:#a855f7; }
+.catch-fish-name.legendary { color:var(--gold); }
+.catch-pts { font-family:var(--font-display); font-size:0.78rem; letter-spacing:0.1em; color:var(--teal); }
+.catch-msg { font-style:italic; color:var(--text-dim); font-size:0.88rem; margin-top:0.2rem; }
+
+/* Tabs */
+.tabs { display:flex; border-bottom:1px solid rgba(0,212,255,0.1); }
+.tab { font-family:var(--font-display); font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.65rem 0.85rem; cursor:pointer; color:var(--text-dim); border:none; border-bottom:2px solid transparent; background:none; transition:all 0.2s; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
+
+/* Shop */
+.shop-grid { display:flex; flex-direction:column; gap:0.65rem; }
+.shop-item { display:flex; align-items:center; gap:0.65rem; padding:0.65rem 0.85rem; background:rgba(0,10,25,0.5); border:1px solid rgba(0,212,255,0.08); border-radius:6px; transition:border-color 0.2s; }
+.shop-item:hover { border-color:rgba(0,212,255,0.2); }
+.shop-item.owned { border-color:rgba(0,255,204,0.2); }
+.shop-item-icon { font-size:1.4rem; width:1.8rem; text-align:center; }
+.shop-item-info { flex:1; }
+.shop-item-name { font-family:var(--font-display); font-size:0.75rem; color:var(--text); margin-bottom:0.1rem; }
+.shop-item-desc { font-size:0.75rem; color:var(--text-dim); font-style:italic; }
+.shop-item-price { font-family:var(--font-display); font-size:0.72rem; color:var(--gold); text-align:right; white-space:nowrap; }
+.shop-section-label { font-family:var(--font-display); font-size:0.6rem; letter-spacing:0.15em; color:var(--text-dim); text-transform:uppercase; margin:0.5rem 0 0.25rem; }
+
+/* Leaderboard */
+.lb-list { display:flex; flex-direction:column; gap:0.4rem; }
+.lb-row { display:flex; align-items:center; gap:0.65rem; padding:0.5rem 0.65rem; background:rgba(0,10,25,0.4); border:1px solid rgba(0,212,255,0.06); border-radius:4px; }
+.lb-rank { font-family:var(--font-display); font-size:0.68rem; color:var(--text-dim); width:1.4rem; text-align:center; }
+.lb-rank.gold-rank { color:var(--gold); }
+.lb-rank.silver-rank { color:#c0c0c0; }
+.lb-rank.bronze-rank { color:#cd7f32; }
+.lb-name { font-family:var(--font-display); font-size:0.75rem; flex:1; color:var(--text); }
+.lb-pts { font-family:var(--font-display); font-size:0.75rem; color:var(--teal); }
+.you-badge { color:var(--cyan); margin-left:0.35rem; font-size:0.6rem; }
+
+/* Catches list */
+.catches-list { display:flex; flex-direction:column; gap:0.35rem; max-height:260px; overflow-y:auto; }
+.catch-row { display:flex; align-items:center; gap:0.65rem; padding:0.45rem 0.65rem; background:rgba(0,10,25,0.4); border-radius:4px; border-left:3px solid; }
+.catch-row.empty { border-color:rgba(90,122,154,0.3); }
+.catch-row.common { border-color:var(--common); }
+.catch-row.uncommon { border-color:#22c55e; }
+.catch-row.rare { border-color:#a855f7; }
+.catch-row.legendary { border-color:var(--gold); }
+.catch-row-name { font-family:var(--font-display); font-size:0.72rem; flex:1; color:var(--text); }
+.catch-row-pts { font-family:var(--font-display); font-size:0.68rem; color:var(--teal); }
+
+/* Connect / register screens */
+.center-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:1.25rem; text-align:center; }
+.center-screen h2 { font-family:var(--font-display); font-size:1.4rem; color:var(--text); letter-spacing:0.1em; }
+.center-screen p { color:var(--text-dim); font-style:italic; max-width:380px; }
+
+.input-field { width:100%; background:rgba(0,10,25,0.8); border:1px solid rgba(0,212,255,0.3); border-radius:4px; padding:0.55rem 0.9rem; color:var(--text); font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.05em; outline:none; }
+.input-field:focus { border-color:var(--cyan); box-shadow:0 0 10px rgba(0,212,255,0.1); }
+.input-field::placeholder { color:var(--text-dim); }
+
+/* Status */
+.status-bar { text-align:center; padding:0.3rem; min-height:1.5rem; }
+.status-msg { font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.1em; color:var(--text-dim); }
+.status-msg.error { color:#ef4444; }
+.status-msg.success { color:var(--teal); }
+
+/* Tx */
+.tx-status { font-family:var(--font-display); font-size:0.62rem; letter-spacing:0.08em; color:var(--text-dim); text-align:center; }
+.tx-status a { color:var(--cyan-dim); text-decoration:none; }
+.tx-status a:hover { color:var(--cyan); }
+
+/* Spinner */
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(0,212,255,0.2); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* Hidden */
+.hidden { display:none !important; }
+
+/* Network warning */
+.network-warn { background:rgba(255,100,0,0.1); border:1px solid rgba(255,100,0,0.4); border-radius:6px; padding:0.6rem 1rem; font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.08em; color:#ff9955; text-align:center; margin-bottom:0.5rem; max-width:1200px; margin-left:auto; margin-right:auto; }
+</style>
+</head>
+<body>
+
+<!-- Ocean bg -->
+<div class="ocean-bg" id="oceanBg"></div>
+
+<div class="app">
+  <header class="header">
+    <h1>⚓ DeepChain Fishing</h1>
+    <p>On-chain fishing powered by GenLayer Intelligent Contracts</p>
+  </header>
+
+  <div class="wallet-bar">
+    <div id="addressBadge" class="address-badge hidden"></div>
+    <button class="btn btn-primary" id="connectBtn" onclick="handleConnect()">Connect Wallet</button>
+  </div>
+
+  <div class="status-bar"><span class="status-msg" id="statusMsg"></span></div>
+  <div id="networkWarn" class="network-warn hidden">⚠ Wrong network. Please switch to GenLayer Studio (Chain ID: 61999)</div>
+
+  <!-- Connect screen -->
+  <div class="center-screen" id="connectScreen">
+    <div style="font-size:4rem">🎣</div>
+    <h2>Cast Your Line On-Chain</h2>
+    <p>Connect your MetaMask wallet to start fishing. Every catch is recorded on the GenLayer blockchain.</p>
+    <button class="btn btn-cast" onclick="handleConnect()">Connect & Play</button>
+    <p style="font-size:0.78rem;color:var(--text-dim);font-style:italic">Network: GenLayer Studio · Chain ID: 61999</p>
+  </div>
+
+  <!-- Register screen -->
+  <div class="center-screen hidden" id="registerScreen">
+    <div style="font-size:3rem">🏷️</div>
+    <h2>Choose Your Fisher Name</h2>
+    <p>Pick a name that will appear on the global leaderboard.</p>
+    <div style="display:flex;flex-direction:column;gap:0.85rem;align-items:center;max-width:300px;width:100%">
+      <input class="input-field" id="nameInput" placeholder="Enter your name..." maxlength="20" onkeydown="if(event.key==='Enter')handleRegister()" />
+      <button class="btn btn-cast" onclick="handleRegister()" id="registerBtn">Begin Fishing</button>
+    </div>
+  </div>
+
+  <!-- Main game -->
+  <div class="main-grid hidden" id="gameScreen">
+
+    <!-- Left -->
+    <div style="display:flex;flex-direction:column;gap:1rem">
+
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-label">Balance</div>
+          <div class="stat-value gold" id="statBalance">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Earned</div>
+          <div class="stat-value" id="statEarned">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Casts</div>
+          <div class="stat-value" id="statCasts">0</div>
+        </div>
+      </div>
+
+      <!-- Equipment -->
+      <div class="equip-bar">
+        <div class="equip-slot">
+          <div class="equip-slot-label">🎣 Rod</div>
+          <div class="equip-slot-value" id="equippedRod">Bamboo</div>
+        </div>
+        <div class="equip-slot">
+          <div class="equip-slot-label">🪝 Bait</div>
+          <div class="equip-slot-value" id="equippedBait">— none</div>
+        </div>
+      </div>
+
+      <!-- Water -->
+      <div class="card">
+        <div class="card-body fishing-zone">
+          <div class="water-surface" id="waterSurface">
+            <div class="water-line"></div>
+            <div class="fishing-line"></div>
+            <div class="hook"></div>
+            <div class="fish-bg">🐟</div>
+            <div class="fish-bg">🐠</div>
+            <div class="fish-bg">🐡</div>
+          </div>
+          <button class="btn btn-cast" id="castBtn" onclick="handleCast()">🎣 Cast Line</button>
+          <div class="tx-status hidden" id="txStatus"></div>
+        </div>
+      </div>
+
+      <!-- Catch reveal -->
+      <div class="catch-reveal" id="catchReveal">
+        <div class="rarity-badge" id="catchRarity"></div>
+        <div class="catch-fish-name" id="catchName"></div>
+        <div class="catch-pts" id="catchPts"></div>
+        <div class="catch-msg" id="catchMsg"></div>
+      </div>
+
+    </div>
+
+    <!-- Right panel -->
+    <div class="card" style="height:fit-content">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('shop')">🏪 Shop</button>
+        <button class="tab" onclick="switchTab('inventory')">🎒 Gear</button>
+        <button class="tab" onclick="switchTab('catches')">🐟 Catches</button>
+        <button class="tab" onclick="switchTab('leaderboard')">🏆 Board</button>
+      </div>
+      <div class="card-body">
+
+        <!-- Shop -->
+        <div id="tabShop">
+          <div class="shop-section-label">Rods</div>
+          <div class="shop-grid" id="shopRods"></div>
+          <div class="shop-section-label" style="margin-top:0.75rem">Bait (single use)</div>
+          <div class="shop-grid" id="shopBaits"></div>
+        </div>
+
+        <!-- Inventory -->
+        <div id="tabInventory" class="hidden">
+          <div class="shop-section-label">Your Rods</div>
+          <div class="shop-grid" id="invRods"></div>
+          <div class="shop-section-label" style="margin-top:0.75rem">Active Bait</div>
+          <div id="invBait"></div>
+        </div>
+
+        <!-- Catches -->
+        <div id="tabCatches" class="hidden">
+          <div class="catches-list" id="catchesList"></div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div id="tabLeaderboard" class="hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem">
+            <span style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.15em;color:var(--text-dim);text-transform:uppercase">Top Fishers</span>
+            <button class="btn-sm btn" onclick="fetchLeaderboard()">↻ Refresh</button>
+          </div>
+          <div class="lb-list" id="lbList"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const CONTRACT_ADDRESS = "0x43DB29E69cB000d26031F44D03eBeAa7a0eD03b0" // ← UPDATE THIS
+const STUDIONET_CHAIN_ID = "0xF23F" // 61999
+const RPC_URL = "https://studio.genlayer.com/api"
+const EXPLORER_URL = "https://explorer-studio.genlayer.com"
+
+const RARITY_ICONS = { common:"🐟", uncommon:"🐠", rare:"🦈", legendary:"🐉", empty:"💨" }
+const ROD_INFO = {
+  bamboo:     { icon:"🎋", desc:"Starter rod. No bonuses.", price:0 },
+  platinum:   { icon:"⚡", desc:"+15% rare, +5% legendary", price:50 },
+  adamantite: { icon:"💎", desc:"+30% rare, +10% legendary", price:150 },
+}
+const BAIT_INFO = {
+  worm:       { icon:"🪱", desc:"+20% catch rate", price:10 },
+  shrimp:     { icon:"🦐", desc:"+30% catch, +10% rare", price:20 },
+  magic_lure: { icon:"✨", desc:"+40% catch, +20% rare", price:50 },
+}
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let userAddress = null
+let playerStats = null
+let casting = false
+
+// ── UTILS ────────────────────────────────────────────────────────────────────
+const shortAddr = a => `${a.slice(0,6)}...${a.slice(-4)}`
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
+
+function showStatus(msg, type = "") {
+  const el = document.getElementById("statusMsg")
+  el.textContent = msg
+  el.className = "status-msg" + (type ? " " + type : "")
+  if (type === "success") setTimeout(() => { el.textContent = "" }, 3000)
+}
+
+function $(id) { return document.getElementById(id) }
+function show(id) { $(id).classList.remove("hidden") }
+function hide(id) { $(id).classList.add("hidden") }
+
+// ── METAMASK / NETWORK ───────────────────────────────────────────────────────
+async function addStudioNet() {
+  await window.ethereum.request({
+    method: "wallet_addEthereumChain",
+    params: [{
+      chainId: STUDIONET_CHAIN_ID,
+      chainName: "GenLayer Studio",
+      nativeCurrency: { name:"GEN", symbol:"GEN", decimals:18 },
+      rpcUrls: [RPC_URL],
+      blockExplorerUrls: [EXPLORER_URL],
+    }]
+  })
+}
+
+async function switchToStudioNet() {
+  try {
+    await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{chainId:STUDIONET_CHAIN_ID}] })
+  } catch(e) {
+    if (e.code === 4902) await addStudioNet()
+    else throw e
+  }
+}
+
+async function handleConnect() {
+  if (!window.ethereum) return showStatus("MetaMask not found. Please install it.", "error")
+  try {
+    showStatus("Connecting wallet...")
+    await switchToStudioNet()
+    const accounts = await window.ethereum.request({ method:"eth_requestAccounts" })
+    userAddress = accounts[0]
+    $("connectBtn").classList.add("hidden")
+    show("addressBadge")
+    $("addressBadge").textContent = "🟢 " + shortAddr(userAddress)
+    hide("connectScreen")
+    showStatus("Connected! Loading your data...")
+    await fetchStats()
+    await fetchLeaderboard()
+    showStatus("", "")
+  } catch(e) {
+    showStatus(e.message || "Connection failed", "error")
+  }
+}
+
+window.addEventListener("load", () => {
+  // Bubbles
+  const bg = $("oceanBg")
+  for (let i = 0; i < 8; i++) {
+    const b = document.createElement("div")
+    b.className = "bubble"
+    const size = 4 + (i % 3) * 6
+    b.style.cssText = `left:${10+i*12}%;width:${size}px;height:${size}px;animation-duration:${8+i*2}s;animation-delay:${i*1.5}s`
+    bg.appendChild(b)
+  }
+
+  // Check if already connected
+  if (window.ethereum) {
+    window.ethereum.request({method:"eth_accounts"}).then(accounts => {
+      if (accounts.length > 0) {
+        userAddress = accounts[0]
+        $("connectBtn").classList.add("hidden")
+        show("addressBadge")
+        $("addressBadge").textContent = "🟢 " + shortAddr(userAddress)
+        hide("connectScreen")
+        fetchStats().then(() => fetchLeaderboard())
+      }
+    })
+    window.ethereum.on("accountsChanged", accounts => {
+      if (accounts.length > 0) { userAddress = accounts[0]; fetchStats() }
+    })
+    window.ethereum.on("chainChanged", () => window.location.reload())
+  }
+})
+
+// ── CONTRACT CALLS ───────────────────────────────────────────────────────────
+async function readContract(fn, args = []) {
+  const res = await fetch(RPC_URL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      jsonrpc:"2.0", method:"gen_call",
+      params:[{ to:CONTRACT_ADDRESS, data:{function:fn, args} }, "latest"],
+      id:1
+    })
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.result
+}
+
+async function writeContract(fn, args) {
+  if (!window.ethereum) throw new Error("MetaMask not found")
+  const txHash = await window.ethereum.request({
+    method:"eth_sendTransaction",
+    params:[{
+      from: userAddress,
+      to: CONTRACT_ADDRESS,
+      data: JSON.stringify({function:fn, args})
+    }]
+  })
+  return txHash
+}
+
+// ── GAME LOGIC ───────────────────────────────────────────────────────────────
+async function fetchStats() {
+  try {
+    const raw = await readContract("get_stats", [userAddress])
+    if (!raw) return
+    playerStats = JSON.parse(raw)
+    const isRegistered = playerStats.name && playerStats.name !== "Unknown" && playerStats.name !== ""
+    if (!isRegistered) {
+      show("registerScreen")
+      hide("gameScreen")
+    } else {
+      hide("registerScreen")
+      show("gameScreen")
+      updateUI()
+    }
+  } catch(e) {
+    show("registerScreen")
+    hide("gameScreen")
+  }
+}
+
+async function fetchLeaderboard() {
+  try {
+    const raw = await readContract("get_leaderboard", [])
+    if (!raw) return
+    const entries = JSON.parse(raw)
+    const list = $("lbList")
+    if (entries.length === 0) {
+      list.innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No entries yet. Be the first!</p>`
+      return
+    }
+    const rankClass = i => i===0?"gold-rank":i===1?"silver-rank":i===2?"bronze-rank":""
+    list.innerHTML = entries.map((e,i) => `
+      <div class="lb-row">
+        <span class="lb-rank ${rankClass(i)}">#${i+1}</span>
+        <span class="lb-name">${e.name||shortAddr(e.address)}${e.address.toLowerCase()===userAddress?.toLowerCase()?'<span class="you-badge">you</span>':''}</span>
+        <span class="lb-pts">${e.points.toLocaleString()} pts</span>
+      </div>`).join("")
+  } catch(e) { /* silent */ }
+}
+
+function updateUI() {
+  if (!playerStats) return
+  $("statBalance").textContent = playerStats.balance.toLocaleString()
+  $("statEarned").textContent = playerStats.total_earned.toLocaleString()
+  $("statCasts").textContent = playerStats.total_casts
+
+  const rod = playerStats.rod
+  $("equippedRod").textContent = (ROD_INFO[rod]?.icon||"") + " " + cap(rod) + " Rod"
+  const bait = playerStats.bait
+  $("equippedBait").textContent = bait === "none" ? "— none" : (BAIT_INFO[bait]?.icon||"") + " " + bait.replace("_"," ")
+
+  renderShop()
+  renderInventory()
+  renderCatches()
+}
+
+function renderShop() {
+  // Rods
+  $("shopRods").innerHTML = Object.entries(ROD_INFO).map(([key, info]) => {
+    const owned = playerStats.inventory.rods.includes(key)
+    const equipped = playerStats.rod === key
+    const canBuy = playerStats.balance >= info.price
+    return `<div class="shop-item ${owned?"owned":""}">
+      <div class="shop-item-icon">${info.icon}</div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${cap(key)} Rod</div>
+        <div class="shop-item-desc">${info.desc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
+        <div class="shop-item-price">${info.price===0?"Free":info.price+" pts"}</div>
+        ${owned
+          ? `<button class="btn btn-equip${equipped?" active":""}" onclick="handleEquipRod('${key}')" ${equipped?"disabled":""}>${equipped?"Equipped":"Equip"}</button>`
+          : `<button class="btn btn-buy" onclick="handleBuyRod('${key}')" ${!canBuy?"disabled":""}>Buy</button>`
+        }
+      </div>
+    </div>`
+  }).join("")
+
+  // Baits
+  $("shopBaits").innerHTML = Object.entries(BAIT_INFO).map(([key, info]) => {
+    const equipped = playerStats.bait === key
+    const canBuy = playerStats.balance >= info.price
+    return `<div class="shop-item">
+      <div class="shop-item-icon">${info.icon}</div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${cap(key.replace("_"," "))}</div>
+        <div class="shop-item-desc">${info.desc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
+        <div class="shop-item-price">${info.price} pts</div>
+        ${equipped
+          ? `<span style="font-family:var(--font-display);font-size:0.62rem;color:var(--teal)">Ready</span>`
+          : `<button class="btn btn-buy" onclick="handleBuyBait('${key}')" ${!canBuy?"disabled":""}>Buy</button>`
+        }
+      </div>
+    </div>`
+  }).join("")
+}
+
+function renderInventory() {
+  // Rods owned
+  $("invRods").innerHTML = playerStats.inventory.rods.map(rod => {
+    const equipped = playerStats.rod === rod
+    return `<div class="shop-item ${equipped?"owned":""}">
+      <div class="shop-item-icon">${ROD_INFO[rod]?.icon||"🎣"}</div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${cap(rod)} Rod</div>
+        <div class="shop-item-desc">${ROD_INFO[rod]?.desc||""}</div>
+      </div>
+      <button class="btn btn-equip${equipped?" active":""}" onclick="handleEquipRod('${rod}')" ${equipped?"disabled":""}>${equipped?"Equipped":"Equip"}</button>
+    </div>`
+  }).join("")
+
+  // Active bait
+  const bait = playerStats.bait
+  $("invBait").innerHTML = bait === "none"
+    ? `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem">No bait equipped. Buy from the shop.</p>`
+    : `<div class="shop-item owned">
+        <div class="shop-item-icon">${BAIT_INFO[bait]?.icon||"🪝"}</div>
+        <div class="shop-item-info">
+          <div class="shop-item-name">${cap(bait.replace("_"," "))}</div>
+          <div class="shop-item-desc">Will be consumed on next cast</div>
+        </div>
+        <span style="font-family:var(--font-display);font-size:0.62rem;color:var(--teal)">Ready</span>
+      </div>`
+}
+
+function renderCatches() {
+  const catches = [...(playerStats.recent_catches||[])].reverse()
+  if (catches.length === 0) {
+    $("catchesList").innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No catches yet. Cast your line!</p>`
+    return
+  }
+  $("catchesList").innerHTML = catches.map(c => `
+    <div class="catch-row ${c.rarity}">
+      <span style="font-size:1.05rem">${RARITY_ICONS[c.rarity]||"🐟"}</span>
+      <span class="catch-row-name">${c.fish==="empty"?"Got away...":c.fish}</span>
+      <span class="catch-row-pts">${c.points>0?"+"+c.points:"—"}</span>
+    </div>`).join("")
+}
+
+function showCatch(c) {
+  const el = $("catchReveal")
+  el.className = "catch-reveal show " + c.rarity
+  $("catchRarity").className = "rarity-badge " + c.rarity
+  $("catchRarity").textContent = c.rarity
+  $("catchName").className = "catch-fish-name " + c.rarity
+  $("catchName").textContent = (RARITY_ICONS[c.rarity]||"") + " " + (c.fish==="empty"?"Nothing...":c.fish)
+  $("catchPts").textContent = c.points>0 ? "+"+c.points+" pts" : ""
+  $("catchMsg").textContent = c.message
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+async function handleRegister() {
+  const name = $("nameInput").value.trim()
+  if (!name) return
+  try {
+    $("registerBtn").disabled = true
+    showStatus("Registering...")
+    const hash = await writeContract("register", [name])
+    showStatus("Registered! Waiting for confirmation...")
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("", "") }, 8000)
+  } catch(e) {
+    showStatus(e.message||"Registration failed","error")
+    $("registerBtn").disabled = false
+  }
+}
+
+async function handleCast() {
+  if (casting) return
+  casting = true
+  const btn = $("castBtn")
+  const water = $("waterSurface")
+  btn.textContent = "⟳ Casting..."
+  btn.classList.add("casting")
+  btn.disabled = true
+  water.classList.add("casting")
+  showStatus("Casting line...")
+  try {
+    const hash = await writeContract("cast", [])
+    showTx(hash)
+    showStatus("Line cast! Waiting for validators...")
+    setTimeout(async () => {
+      await fetchStats()
+      if (playerStats?.recent_catches?.length > 0) {
+        const latest = playerStats.recent_catches[playerStats.recent_catches.length-1]
+        showCatch(latest)
+      }
+      await fetchLeaderboard()
+      btn.textContent = "🎣 Cast Line"
+      btn.classList.remove("casting")
+      btn.disabled = false
+      water.classList.remove("casting")
+      casting = false
+      showStatus("","")
+    }, 15000)
+  } catch(e) {
+    showStatus(e.message||"Cast failed","error")
+    btn.textContent = "🎣 Cast Line"
+    btn.classList.remove("casting")
+    btn.disabled = false
+    water.classList.remove("casting")
+    casting = false
+  }
+}
+
+async function handleBuyRod(rodType) {
+  try {
+    showStatus(`Buying ${rodType} rod...`)
+    const hash = await writeContract("buy_rod", [rodType])
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("Rod purchased!","success") }, 8000)
+  } catch(e) { showStatus(e.message||"Purchase failed","error") }
+}
+
+async function handleBuyBait(baitType) {
+  try {
+    showStatus(`Buying ${baitType}...`)
+    const hash = await writeContract("buy_bait", [baitType])
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("Bait equipped!","success") }, 8000)
+  } catch(e) { showStatus(e.message||"Purchase failed","error") }
+}
+
+async function handleEquipRod(rodType) {
+  try {
+    showStatus("Equipping rod...")
+    const hash = await writeContract("equip_rod", [rodType])
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("Rod equipped!","success") }, 8000)
+  } catch(e) { showStatus(e.message||"Failed","error") }
+}
+
+function showTx(hash) {
+  const el = $("txStatus")
+  el.classList.remove("hidden")
+  el.innerHTML = `TX: <a href="${EXPLORER_URL}/transactions/${hash}" target="_blank">${shortAddr(hash)}</a>`
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ["shop","inventory","catches","leaderboard"].forEach(t => {
+    $("tab"+cap(t)).classList.add("hidden")
+  })
+  $("tab"+cap(name)).classList.remove("hidden")
+  document.querySelectorAll(".tab").forEach((el,i) => {
+    el.classList.toggle("active", ["shop","inventory","catches","leaderboard"][i]===name)
+  })
+  if (name==="leaderboard") fetchLeaderboard()
+}
+</script>
+</body>
+</html>
