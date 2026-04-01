@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -15,11 +14,16 @@ body {
     text-align:center;
 }
 
-/* HEADER */
 #topbar {
     position:absolute;
     top:20px;
     right:20px;
+}
+
+#wallet {
+    margin-top:5px;
+    font-size:14px;
+    opacity:0.8;
 }
 
 button {
@@ -39,25 +43,21 @@ button:hover {
 }
 
 #container {
-    margin-top:100px;
+    margin-top:120px;
 }
 
-/* TITLE */
-h1 {
-    font-size:48px;
-    margin-bottom:10px;
+#banner {
+    width:420px;
+    max-width:90%;
+    margin-bottom:25px;
+    border-radius:20px;
+    box-shadow: 0 0 25px rgba(0,0,0,0.6);
 }
 
-#subtitle {
-    font-size:18px;
-    opacity:0.8;
-}
-
-/* OCEAN ANIMATION */
 #ocean {
     margin:30px auto;
-    width:300px;
-    height:150px;
+    width:340px;
+    height:170px;
     border-radius:20px;
     background: linear-gradient(#00c6ff, #0072ff);
     position:relative;
@@ -70,11 +70,11 @@ h1 {
     height:100%;
     background: rgba(255,255,255,0.2);
     border-radius:40%;
-    animation: wave 5s infinite linear;
+    animation: wave 6s infinite linear;
 }
 
 .wave:nth-child(2){
-    animation-delay: -2s;
+    animation-delay: -3s;
 }
 
 @keyframes wave {
@@ -82,62 +82,67 @@ h1 {
     to { transform: translateX(-50%); }
 }
 
-/* FISHING LINE */
 #line {
     position:absolute;
     width:2px;
     height:0;
     background:white;
-    top:-50px;
+    top:-60px;
     left:50%;
-    transition: height 0.5s;
+    transition: height 0.4s ease;
 }
 
-/* RESULT */
+input {
+    padding:10px;
+    border-radius:8px;
+    border:none;
+    margin-top:10px;
+    width:200px;
+}
+
 #result {
     margin-top:20px;
-    font-size:20px;
+    font-size:22px;
+    font-weight:bold;
 }
 
-/* STATS */
 #stats {
     margin-top:20px;
     font-size:18px;
+    opacity:0.9;
 }
 </style>
-
 </head>
 
 <body>
 
 <div id="topbar">
     <button onclick="connectWallet()">Connect Wallet</button>
-    <div id="wallet"></div>
+    <div id="wallet">Not connected</div>
 </div>
 
 <div id="container">
-    <h1>Fishing Game</h1>
-    <div id="subtitle">for GenLayer Community</div>
 
-```
-<div id="ocean">
-    <div class="wave"></div>
-    <div class="wave"></div>
-    <div id="line"></div>
-</div>
+    <img id="banner" src="assets/banner.png" alt="Fishing Game Banner">
 
-<div>
-    <input id="nameInput" placeholder="Enter nickname">
-    <button onclick="register()">Register</button>
-</div>
+    <div id="ocean">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div id="line"></div>
+    </div>
 
-<div>
-    <button onclick="cast()">🎣 Cast</button>
-</div>
+    <div>
+        <input id="nameInput" placeholder="Enter nickname">
+        <br>
+        <button onclick="register()">Register</button>
+    </div>
 
-<div id="result"></div>
-<div id="stats"></div>
-```
+    <div>
+        <button onclick="cast()">🎣 Cast Fishing</button>
+    </div>
+
+    <div id="result"></div>
+    <div id="stats"></div>
 
 </div>
 
@@ -148,87 +153,82 @@ let provider;
 let signer;
 let address;
 
-/* CONNECT WALLET */
 async function connectWallet(){
-    if(!window.ethereum){
-        alert("Install Metamask");
-        return;
-    }
-
-    provider = new ethers.BrowserProvider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    signer = await provider.getSigner();
-    address = await signer.getAddress();
-
-    document.getElementById("wallet").innerText =
-        address.slice(0,6) + "..." + address.slice(-4);
-
-    loadStats();
-}
-
-/* SIMPLE CALL (MOCK GENLAYER) */
-async function callContract(method, args=[]){
     try{
-        // ⚠️ Ganti ini sesuai SDK genlayer kalau perlu
-        console.log("Call:", method, args);
+        if(!window.ethereum){
+            alert("Install Metamask!");
+            return;
+        }
 
-        return "{}";
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        address = await signer.getAddress();
+
+        document.getElementById("wallet").innerText =
+            address.slice(0,6) + "..." + address.slice(-4);
+
+        document.getElementById("result").innerText = "Wallet connected!";
+        loadStats();
+
     }catch(e){
         console.error(e);
     }
 }
 
-/* REGISTER */
+async function callContract(method, args=[]){
+    console.log("CALL:", method, args);
+    return "{}";
+}
+
 async function register(){
     const name = document.getElementById("nameInput").value;
 
-    if(!name) return alert("Enter name");
+    if(!name){
+        alert("Enter nickname!");
+        return;
+    }
 
     document.getElementById("result").innerText = "Registering...";
 
-    await callContract("register", [name]);
+    await callContract("register",[name]);
 
     document.getElementById("result").innerText = "Registered!";
 }
 
-/* CAST */
 async function cast(){
     if(!address){
-        alert("Connect wallet first");
+        alert("Connect wallet first!");
         return;
     }
 
     const line = document.getElementById("line");
 
-    // animasi turun
-    line.style.height = "120px";
+    line.style.height = "130px";
 
     document.getElementById("result").innerText = "Casting...";
 
     setTimeout(async ()=>{
-
         await callContract("cast");
 
         line.style.height = "0px";
 
         document.getElementById("result").innerText =
-            "🎉 You caught something!";
+            "You caught something!";
 
         loadStats();
 
-    }, 1500);
+    },1500);
 }
 
-/* LOAD STATS */
 async function loadStats(){
     if(!address) return;
 
-    const data = await callContract("get_stats",[address]);
+    await callContract("get_stats",[address]);
 
     document.getElementById("stats").innerText =
-        "Stats loaded (mock)";
+        "Stats loading (soon real data)";
 }
-
 </script>
 
 </body>
