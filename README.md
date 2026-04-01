@@ -1,241 +1,1033 @@
-# 🎣 Deep Chain Fishing Game
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeepChain Fishing 🎣</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-A blockchain-based fishing game built on GenLayer with smart contracts and web interface.
+:root {
+  --deep: #020818;
+  --abyss: #010610;
+  --ocean: #0a1628;
+  --blue: #0d3b6e;
+  --cyan: #00d4ff;
+  --cyan-dim: #0097b8;
+  --teal: #00ffcc;
+  --gold: #ffd700;
+  --gold-dim: #b8960a;
+  --text: #c8e0f0;
+  --text-dim: #5a7a9a;
+  --rare: #a855f7;
+  --legendary: #ffd700;
+  --common: #64748b;
+  --uncommon: #22c55e;
+  --font-display: 'Cinzel', serif;
+  --font-body: 'Crimson Pro', serif;
+}
 
-## 🎮 Game Features
+html, body { height: 100%; background: var(--abyss); color: var(--text); font-family: var(--font-body); font-size: 17px; }
 
-- **Fishing Mechanics**: Cast your line and catch various fish with different rarities
-- **Equipment System**: Buy and upgrade fishing rods and baits
-- **Economy**: Earn points from catches and spend on better equipment
-- **Leaderboard**: Compete with other players for the highest score
-- **Smart Contract**: Fully decentralized game logic on GenLayer
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--abyss); }
+::-webkit-scrollbar-thumb { background: var(--blue); border-radius: 3px; }
 
-## 🐟 Fish Collection
+/* Ocean BG */
+.ocean-bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse at 20% 50%, #0a2040 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, #051525 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, #030f20 0%, transparent 60%),
+              var(--abyss);
+  overflow: hidden;
+}
+.ocean-bg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 20% 30%, rgba(0,212,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 60%, rgba(0,255,204,0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 80%, rgba(0,212,255,0.2) 0%, transparent 100%),
+    radial-gradient(1px 1px at 90% 10%, rgba(0,255,204,0.4) 0%, transparent 100%),
+    radial-gradient(2px 2px at 60% 40%, rgba(255,215,0,0.15) 0%, transparent 100%);
+  animation: shimmer 8s ease-in-out infinite alternate;
+}
+@keyframes shimmer {
+  0% { opacity: 0.5; transform: translateY(0); }
+  100% { opacity: 1; transform: translateY(-10px); }
+}
 
-### Common Fish
-- **Sardine** - 10 points
-- **Catfish** - 20 points  
-- **Carp** - 30 points
+.bubble {
+  position: absolute; border-radius: 50%;
+  border: 1px solid rgba(0,212,255,0.3);
+  animation: rise linear infinite; pointer-events: none;
+}
+@keyframes rise {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 0.5; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
 
-### Uncommon Fish
-- **Bass** - 50 points
-- **Trout** - 80 points
-- **Salmon** - 100 points
+/* App */
+.app { position: relative; z-index: 1; min-height: 100vh; padding: 0 1rem 4rem; }
 
-### Rare Fish
-- **Tuna** - 200 points
-- **Swordfish** - 350 points
-- **Shark** - 500 points
+.header { text-align: center; padding: 2rem 1rem 1.25rem; border-bottom: 1px solid rgba(0,212,255,0.15); }
+.header h1 {
+  font-family: var(--font-display); font-size: clamp(1.6rem, 5vw, 3rem);
+  font-weight: 700; letter-spacing: 0.1em;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--teal) 50%, var(--gold) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 0.2rem;
+}
+.header p { font-style: italic; color: var(--text-dim); font-size: 0.9rem; letter-spacing: 0.05em; }
 
-### Legendary Fish
-- **Golden Koi** - 1,000 points
-- **Giant Squid** - 2,000 points
-- **Kraken** - 5,000 points
+.wallet-bar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; padding: 0.6rem 1rem; max-width: 1200px; margin: 0 auto; }
+.address-badge { font-family: var(--font-display); font-size: 0.68rem; letter-spacing: 0.05em; color: var(--cyan-dim); background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.2); padding: 0.35rem 0.8rem; border-radius: 999px; }
 
-## 🎣 Equipment
+/* Buttons */
+.btn { font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border: none; border-radius: 4px; padding: 0.55rem 1.3rem; transition: all 0.2s; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary { background: transparent; border: 1px solid var(--cyan); color: var(--cyan); }
+.btn-primary:hover:not(:disabled) { background: var(--cyan); color: var(--abyss); box-shadow: 0 0 20px rgba(0,212,255,0.4); }
+.btn-cast { font-size: 1rem; padding: 0.9rem 2.5rem; background: transparent; border: 2px solid var(--teal); color: var(--teal); letter-spacing: 0.2em; }
+.btn-cast:hover:not(:disabled) { background: var(--teal); color: var(--abyss); box-shadow: 0 0 30px rgba(0,255,204,0.5); }
+.btn-cast.casting { animation: pulse-cast 1s ease-in-out infinite; }
+@keyframes pulse-cast {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,255,204,0.3); }
+  50% { box-shadow: 0 0 40px rgba(0,255,204,0.8); }
+}
+.btn-buy { font-size: 0.68rem; padding: 0.35rem 0.9rem; background: transparent; border: 1px solid var(--gold-dim); color: var(--gold); }
+.btn-buy:hover:not(:disabled) { background: var(--gold); color: var(--abyss); box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+.btn-equip { font-size: 0.62rem; padding: 0.3rem 0.75rem; background: transparent; border: 1px solid rgba(0,212,255,0.4); color: var(--cyan-dim); }
+.btn-equip:hover:not(:disabled) { background: rgba(0,212,255,0.1); }
+.btn-equip.active { border-color: var(--teal); color: var(--teal); }
+.btn-sm { font-size: 0.6rem; padding: 0.25rem 0.6rem; background: transparent; border: 1px solid rgba(0,212,255,0.3); color: var(--text-dim); }
+.btn-sm:hover { color: var(--cyan); border-color: var(--cyan); }
 
-### Fishing Rods
-| Rod | Price | Rare Bonus | Legendary Bonus |
-|-----|-------|------------|----------------|
-| Bamboo | Free | 0% | 0% |
-| Platinum | 50 points | 15% | 5% |
-| Adamantite | 150 points | 30% | 10% |
+/* Grid */
+.main-grid { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 1fr 370px; gap: 1.25rem; padding: 1.25rem 0; }
+@media (max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
 
-### Baits
-| Bait | Price | Catch Bonus | Rare Bonus |
-|------|-------|-------------|------------|
-| None | Free | 0% | 0% |
-| Worm | 10 points | 20% | 0% |
-| Shrimp | 20 points | 30% | 10% |
-| Magic Lure | 50 points | 40% | 20% |
+/* Cards */
+.card { background: rgba(10,22,40,0.7); border: 1px solid rgba(0,212,255,0.12); border-radius: 8px; backdrop-filter: blur(10px); }
+.card-header { padding: 0.85rem 1.2rem 0.65rem; border-bottom: 1px solid rgba(0,212,255,0.1); font-family: var(--font-display); font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--cyan-dim); }
+.card-body { padding: 1.1rem; }
 
-## 🚀 Getting Started
+/* Stats */
+.stats-bar { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.65rem; }
+.stat-item { text-align: center; padding: 0.65rem; background: rgba(0,10,25,0.5); border: 1px solid rgba(0,212,255,0.1); border-radius: 6px; }
+.stat-label { font-family: var(--font-display); font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 0.25rem; }
+.stat-value { font-family: var(--font-display); font-size: 1.2rem; color: var(--cyan); }
+.stat-value.gold { color: var(--gold); }
 
-### Prerequisites
-- Node.js (v14 or higher)
-- Python (v3.8 or higher)
-- GenLayer CLI
-- Git
+/* Equipment */
+.equip-bar { display: flex; gap: 0.65rem; }
+.equip-slot { flex:1; padding: 0.65rem; background: rgba(0,10,25,0.5); border: 1px solid rgba(0,212,255,0.1); border-radius:6px; text-align:center; }
+.equip-slot-label { font-family: var(--font-display); font-size: 0.58rem; letter-spacing: 0.12em; color: var(--text-dim); margin-bottom: 0.2rem; }
+.equip-slot-value { font-family: var(--font-display); font-size: 0.8rem; color: var(--text); text-transform: capitalize; }
 
-### Installation
+/* Water */
+.fishing-zone { display: flex; flex-direction: column; align-items: center; gap: 1.25rem; }
+.water-surface { width:100%; height:160px; position:relative; overflow:hidden; border-radius:6px; background: linear-gradient(180deg, rgba(0,50,100,0.3) 0%, rgba(0,20,50,0.8) 100%); border: 1px solid rgba(0,212,255,0.2); }
+.water-line { position:absolute; top:30%; left:0; right:0; height:1px; background: linear-gradient(90deg, transparent, rgba(0,212,255,0.5), transparent); animation: wave 3s ease-in-out infinite; }
+@keyframes wave { 0%,100% { transform: translateY(0); opacity:0.5; } 50% { transform: translateY(3px); opacity:1; } }
+.fishing-line { position:absolute; top:0; left:50%; width:1px; height:60%; background: linear-gradient(180deg, rgba(200,224,240,0.6), rgba(0,212,255,0.3)); transform-origin: top center; }
+.hook { position:absolute; bottom:38%; left:50%; transform:translateX(-50%); width:8px; height:8px; border:1px solid var(--cyan); border-radius:0 0 4px 4px; border-top:none; }
+.fish-bg { position:absolute; font-size:1.8rem; animation: swim 6s ease-in-out infinite; opacity:0.5; }
+.fish-bg:nth-child(1) { bottom:15%; left:10%; animation-delay:0s; }
+.fish-bg:nth-child(2) { bottom:25%; left:60%; font-size:1.1rem; opacity:0.25; animation-delay:2s; }
+.fish-bg:nth-child(3) { bottom:8%; left:30%; font-size:1.3rem; opacity:0.3; animation-delay:4s; }
+@keyframes swim { 0%{transform:translateX(0) scaleX(1)} 25%{transform:translateX(20px) scaleX(1)} 50%{transform:translateX(40px) scaleX(-1)} 75%{transform:translateX(20px) scaleX(-1)} 100%{transform:translateX(0) scaleX(1)} }
+.casting .fishing-line { animation: cast-anim 1.5s ease-in-out infinite; }
+@keyframes cast-anim { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/genlayer-fishing-game.git
-   cd genlayer-fishing-game
-   ```
+/* Catch reveal */
+.catch-reveal { width:100%; min-height:80px; border-radius:6px; padding:1.1rem; text-align:center; border:1px solid rgba(0,212,255,0.15); background:rgba(0,10,25,0.5); animation:reveal-in 0.5s ease; display:none; }
+.catch-reveal.show { display:block; }
+@keyframes reveal-in { 0%{opacity:0;transform:translateY(10px) scale(0.95)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+.catch-reveal.empty { border-color: rgba(90,122,154,0.3); }
+.catch-reveal.common { border-color: rgba(100,116,139,0.5); }
+.catch-reveal.uncommon { border-color: rgba(34,197,94,0.5); box-shadow:0 0 20px rgba(34,197,94,0.1); }
+.catch-reveal.rare { border-color: rgba(168,85,247,0.6); box-shadow:0 0 25px rgba(168,85,247,0.2); }
+.catch-reveal.legendary { border-color: var(--gold); animation:reveal-in 0.5s ease, legendary-glow 2s ease-in-out infinite; }
+@keyframes legendary-glow { 0%,100%{box-shadow:0 0 40px rgba(255,215,0,0.3)} 50%{box-shadow:0 0 60px rgba(255,215,0,0.5)} }
 
-2. **Install dependencies**
-   ```bash
-   # Frontend dependencies
-   cd frontend
-   npm install
-   
-   # Backend dependencies (if needed)
-   cd ../contracts
-   pip install -r requirements.txt
-   ```
+.rarity-badge { display:inline-block; font-family:var(--font-display); font-size:0.58rem; letter-spacing:0.15em; text-transform:uppercase; padding:0.18rem 0.55rem; border-radius:999px; margin-bottom:0.4rem; }
+.rarity-badge.empty { background:rgba(90,122,154,0.1); color:var(--text-dim); border:1px solid rgba(90,122,154,0.2); }
+.rarity-badge.common { background:rgba(100,116,139,0.2); color:var(--common); border:1px solid rgba(100,116,139,0.4); }
+.rarity-badge.uncommon { background:rgba(34,197,94,0.1); color:#22c55e; border:1px solid rgba(34,197,94,0.4); }
+.rarity-badge.rare { background:rgba(168,85,247,0.1); color:#a855f7; border:1px solid rgba(168,85,247,0.4); }
+.rarity-badge.legendary { background:rgba(255,215,0,0.1); color:var(--gold); border:1px solid rgba(255,215,0,0.4); }
 
-3. **Deploy Smart Contract**
-   ```bash
-   # Using GenLayer CLI
-   genlayer deploy contracts/FishingGameFixed.py
-   ```
+.catch-fish-name { font-family:var(--font-display); font-size:1.3rem; margin-bottom:0.2rem; }
+.catch-fish-name.empty { color:var(--text-dim); }
+.catch-fish-name.common { color:var(--text); }
+.catch-fish-name.uncommon { color:#22c55e; }
+.catch-fish-name.rare { color:#a855f7; }
+.catch-fish-name.legendary { color:var(--gold); }
+.catch-pts { font-family:var(--font-display); font-size:0.78rem; letter-spacing:0.1em; color:var(--teal); }
+.catch-msg { font-style:italic; color:var(--text-dim); font-size:0.88rem; margin-top:0.2rem; }
 
-4. **Configure Frontend**
-   ```bash
-   # Update contract address in frontend/src/config.js
-   # Add your deployed contract address
-   ```
+/* Tabs */
+.tabs { display:flex; border-bottom:1px solid rgba(0,212,255,0.1); }
+.tab { font-family:var(--font-display); font-size:0.62rem; letter-spacing:0.12em; text-transform:uppercase; padding:0.65rem 0.85rem; cursor:pointer; color:var(--text-dim); border:none; border-bottom:2px solid transparent; background:none; transition:all 0.2s; }
+.tab:hover { color:var(--text); }
+.tab.active { color:var(--cyan); border-bottom-color:var(--cyan); }
 
-5. **Start the application**
-   ```bash
-   # Start frontend
-   cd frontend
-   npm start
-   
-   # Or use web version
-   # Open web-version/index.html in browser
-   ```
+/* Shop */
+.shop-grid { display:flex; flex-direction:column; gap:0.65rem; }
+.shop-item { display:flex; align-items:center; gap:0.65rem; padding:0.65rem 0.85rem; background:rgba(0,10,25,0.5); border:1px solid rgba(0,212,255,0.08); border-radius:6px; transition:border-color 0.2s; }
+.shop-item:hover { border-color:rgba(0,212,255,0.2); }
+.shop-item.owned { border-color:rgba(0,255,204,0.2); }
+.shop-item-icon { font-size:1.4rem; width:1.8rem; text-align:center; }
+.shop-item-info { flex:1; }
+.shop-item-name { font-family:var(--font-display); font-size:0.75rem; color:var(--text); margin-bottom:0.1rem; }
+.shop-item-desc { font-size:0.75rem; color:var(--text-dim); font-style:italic; }
+.shop-item-price { font-family:var(--font-display); font-size:0.72rem; color:var(--gold); text-align:right; white-space:nowrap; }
+.shop-section-label { font-family:var(--font-display); font-size:0.6rem; letter-spacing:0.15em; color:var(--text-dim); text-transform:uppercase; margin:0.5rem 0 0.25rem; }
 
-## 🎯 How to Play
+/* Leaderboard */
+.lb-list { display:flex; flex-direction:column; gap:0.4rem; }
+.lb-row { display:flex; align-items:center; gap:0.65rem; padding:0.5rem 0.65rem; background:rgba(0,10,25,0.4); border:1px solid rgba(0,212,255,0.06); border-radius:4px; }
+.lb-rank { font-family:var(--font-display); font-size:0.68rem; color:var(--text-dim); width:1.4rem; text-align:center; }
+.lb-rank.gold-rank { color:var(--gold); }
+.lb-rank.silver-rank { color:#c0c0c0; }
+.lb-rank.bronze-rank { color:#cd7f32; }
+.lb-name { font-family:var(--font-display); font-size:0.75rem; flex:1; color:var(--text); }
+.lb-pts { font-family:var(--font-display); font-size:0.75rem; color:var(--teal); }
+.you-badge { color:var(--cyan); margin-left:0.35rem; font-size:0.6rem; }
 
-1. **Register**: Create your account with a unique name
-2. **Cast Line**: Click "Cast" to try catching fish
-3. **Earn Points**: Get points based on fish rarity
-4. **Upgrade Equipment**: Buy better rods and baits to improve catch rates
-5. **Compete**: Climb the leaderboard by earning the most points
+/* Catches list */
+.catches-list { display:flex; flex-direction:column; gap:0.35rem; max-height:260px; overflow-y:auto; }
+.catch-row { display:flex; align-items:center; gap:0.65rem; padding:0.45rem 0.65rem; background:rgba(0,10,25,0.4); border-radius:4px; border-left:3px solid; }
+.catch-row.empty { border-color:rgba(90,122,154,0.3); }
+.catch-row.common { border-color:var(--common); }
+.catch-row.uncommon { border-color:#22c55e; }
+.catch-row.rare { border-color:#a855f7; }
+.catch-row.legendary { border-color:var(--gold); }
+.catch-row-name { font-family:var(--font-display); font-size:0.72rem; flex:1; color:var(--text); }
+.catch-row-pts { font-family:var(--font-display); font-size:0.68rem; color:var(--teal); }
 
-### Game Mechanics
+/* Connect / register screens */
+.center-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:1.25rem; text-align:center; }
+.center-screen h2 { font-family:var(--font-display); font-size:1.4rem; color:var(--text); letter-spacing:0.1em; }
+.center-screen p { color:var(--text-dim); font-style:italic; max-width:380px; }
 
-- **Catch Rates**: Base 30% empty, 25% common, 15% uncommon, 15% rare, 2% legendary
-- **Bonuses**: Equipment improves your chances of catching rarer fish
-- **Bait Consumption**: Bait is consumed after each cast (except "None")
-- **Inventory**: You own all purchased equipment permanently
+.input-field { width:100%; background:rgba(0,10,25,0.8); border:1px solid rgba(0,212,255,0.3); border-radius:4px; padding:0.55rem 0.9rem; color:var(--text); font-family:var(--font-display); font-size:0.82rem; letter-spacing:0.05em; outline:none; }
+.input-field:focus { border-color:var(--cyan); box-shadow:0 0 10px rgba(0,212,255,0.1); }
+.input-field::placeholder { color:var(--text-dim); }
 
-## 🏗️ Project Structure
+/* Status */
+.status-bar { text-align:center; padding:0.3rem; min-height:1.5rem; }
+.status-msg { font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.1em; color:var(--text-dim); }
+.status-msg.error { color:#ef4444; }
+.status-msg.success { color:var(--teal); }
 
-```
-genlayer-fishing-game/
-├── contracts/                 # Smart contracts
-│   ├── FishingGameFixed.py    # Main game contract (WORKING)
-│   ├── FishingGameSimple.py   # Simplified version
-│   └── FixedFishingCore.py    # Original version
-├── frontend/                  # React frontend
-│   ├── src/
-│   │   ├── components/        # React components
-│   │   ├── App.js           # Main app component
-│   │   └── index.js         # Entry point
-│   └── package.json
-├── web-version/              # Static web version
-│   └── index.html          # Single HTML file
-└── README.md               # Documentation
-```
+/* Tx */
+.tx-status { font-family:var(--font-display); font-size:0.62rem; letter-spacing:0.08em; color:var(--text-dim); text-align:center; }
+.tx-status a { color:var(--cyan-dim); text-decoration:none; }
+.tx-status a:hover { color:var(--cyan); }
 
-## 🔧 Smart Contract API
+/* Spinner */
+.spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(0,212,255,0.2); border-top-color:var(--cyan); border-radius:50%; animation:spin 0.8s linear infinite; vertical-align:middle; }
+@keyframes spin { to { transform:rotate(360deg); } }
 
-### Write Functions
-- `register(name)` - Register new player
-- `cast()` - Cast fishing line
-- `buy_rod(rod_type)` - Purchase fishing rod
-- `buy_bait(bait_type)` - Purchase bait
-- `equip_rod(rod_type)` - Equip owned rod
+/* Hidden */
+.hidden { display:none !important; }
 
-### View Functions
-- `get_stats(address)` - Get player statistics
-- `get_leaderboard()` - Get top 10 players
-- `get_catalog()` - Get fish catalog
-- `get_shop()` - Get available equipment
+/* Network warning */
+.network-warn { background:rgba(255,100,0,0.1); border:1px solid rgba(255,100,0,0.4); border-radius:6px; padding:0.6rem 1rem; font-family:var(--font-display); font-size:0.68rem; letter-spacing:0.08em; color:#ff9955; text-align:center; margin-bottom:0.5rem; max-width:1200px; margin-left:auto; margin-right:auto; }
+</style>
+</head>
+<body>
 
-## 🌐 Web Version
+<!-- Ocean bg -->
+<div class="ocean-bg" id="oceanBg"></div>
 
-A simplified web version is available in `web-version/index.html` that can be run directly in any modern browser without setup.
+<div class="app">
+  <header class="header">
+    <h1>⚓ DeepChain Fishing</h1>
+    <p>On-chain fishing powered by GenLayer Intelligent Contracts</p>
+  </header>
 
-## 🤝 Contributing
+  <div class="wallet-bar">
+    <div id="addressBadge" class="address-badge hidden"></div>
+    <button class="btn btn-primary" id="connectBtn" onclick="handleConnect()">🦊 Connect MetaMask</button>
+    <button class="btn btn-sm" onclick="openMetaMask()">📥 Install MetaMask</button>
+  </div>
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+  <div class="status-bar"><span class="status-msg" id="statusMsg"></span></div>
+  <div id="networkWarn" class="network-warn hidden">⚠ Wrong network. Please switch to GenLayer Studio (Chain ID: 0xF22F)</div>
 
-## 📝 Development
+  <!-- Connect screen -->
+  <div class="center-screen" id="connectScreen">
+    <div style="font-size:4rem">🎣</div>
+    <h2>Cast Your Line On-Chain</h2>
+    <p>Connect your MetaMask wallet to start fishing. Every catch is recorded on GenLayer blockchain.</p>
+    <button class="btn btn-cast" onclick="handleConnect()">Connect & Play</button>
+    <p style="font-size:0.78rem;color:var(--text-dim);font-style:italic">Network: GenLayer Studio · Chain ID: 0xF22F (61999)</p>
+  </div>
 
-### Smart Contract Development
-```bash
-# Test contract locally
-cd contracts
-python -m unittest test_fishing_game.py
+  <!-- Register screen -->
+  <div class="center-screen hidden" id="registerScreen">
+    <div style="font-size:3rem">🏷️</div>
+    <h2>Choose Your Fisher Name</h2>
+    <p>Pick a name that will appear on the global leaderboard.</p>
+    <div style="display:flex;flex-direction:column;gap:0.85rem;align-items:center;max-width:300px;width:100%">
+      <input class="input-field" id="nameInput" placeholder="Enter your name..." maxlength="20" onkeydown="if(event.key==='Enter')handleRegister()" />
+      <button class="btn btn-cast" onclick="handleRegister()" id="registerBtn">Begin Fishing</button>
+    </div>
+  </div>
 
-# Deploy to testnet
-genlayer deploy --network testnet FishingGameFixed.py
-```
+  <!-- Main game -->
+  <div class="main-grid hidden" id="gameScreen">
 
-### Frontend Development
-```bash
-cd frontend
-npm start          # Development server
-npm run build      # Production build
-npm test          # Run tests
-```
+    <!-- Left -->
+    <div style="display:flex;flex-direction:column;gap:1rem">
 
-## 🐛 Troubleshooting
+      <!-- Stats -->
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-label">Balance</div>
+          <div class="stat-value gold" id="statBalance">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Earned</div>
+          <div class="stat-value" id="statEarned">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Total Casts</div>
+          <div class="stat-value" id="statCasts">0</div>
+        </div>
+      </div>
 
-### Common Issues
+      <!-- Equipment -->
+      <div class="equip-bar">
+        <div class="equip-slot">
+          <div class="equip-slot-label">🎣 Rod</div>
+          <div class="equip-slot-value" id="equippedRod">Bamboo</div>
+        </div>
+        <div class="equip-slot">
+          <div class="equip-slot-label">🪝 Bait</div>
+          <div class="equip-slot-value" id="equippedBait">— none</div>
+        </div>
+      </div>
 
-1. **Contract Schema Loading Error**
-   - Ensure runner comment is at top: `# { "runner": "python" }`
-   - Check dependency comment: `# { "Depends": "py-genlayer:..." }`
-   - Use `bigint` for storage variables
+      <!-- Water -->
+      <div class="card">
+        <div class="card-body fishing-zone">
+          <div class="water-surface" id="waterSurface">
+            <div class="water-line"></div>
+            <div class="fishing-line"></div>
+            <div class="hook"></div>
+            <div class="fish-bg">🐟</div>
+            <div class="fish-bg">🐠</div>
+            <div class="fish-bg">🐡</div>
+          </div>
+          <button class="btn btn-cast" id="castBtn" onclick="handleCast()">🎣 Cast Line</button>
+          <div class="tx-status hidden" id="txStatus"></div>
+        </div>
+      </div>
 
-2. **Frontend Connection Issues**
-   - Verify contract address in config
-   - Check network connection
-   - Ensure MetaMask/wallet is connected
+      <!-- Catch reveal -->
+      <div class="catch-reveal" id="catchReveal">
+        <div class="rarity-badge" id="catchRarity"></div>
+        <div class="catch-fish-name" id="catchName"></div>
+        <div class="catch-pts" id="catchPts"></div>
+        <div class="catch-msg" id="catchMsg"></div>
+      </div>
 
-3. **Transaction Failures**
-   - Check wallet balance
-   - Verify gas fees
-   - Ensure correct function parameters
+    </div>
 
-## 📄 License
+    <!-- Right panel -->
+    <div class="card" style="height:fit-content">
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('shop')">🏪 Shop</button>
+        <button class="tab" onclick="switchTab('inventory')">🎒 Gear</button>
+        <button class="tab" onclick="switchTab('catches')">🐟 Catches</button>
+        <button class="tab" onclick="switchTab('leaderboard')">🏆 Board</button>
+      </div>
+      <div class="card-body">
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+        <!-- Shop -->
+        <div id="tabShop">
+          <div class="shop-section-label">Rods</div>
+          <div class="shop-grid" id="shopRods"></div>
+          <div class="shop-section-label" style="margin-top:0.75rem">Bait (single use)</div>
+          <div class="shop-grid" id="shopBaits"></div>
+        </div>
 
-## 🙏 Acknowledgments
+        <!-- Inventory -->
+        <div id="tabInventory" class="hidden">
+          <div class="shop-section-label">Your Rods</div>
+          <div class="shop-grid" id="invRods"></div>
+          <div class="shop-section-label" style="margin-top:0.75rem">Active Bait</div>
+          <div id="invBait"></div>
+        </div>
 
-- GenLayer team for the blockchain platform
-- Community contributors and testers
-- Open source libraries used in this project
+        <!-- Catches -->
+        <div id="tabCatches" class="hidden">
+          <div class="catches-list" id="catchesList"></div>
+        </div>
 
-## 🔗 Links
+        <!-- Leaderboard -->
+        <div id="tabLeaderboard" class="hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.65rem">
+            <span style="font-family:var(--font-display);font-size:0.6rem;letter-spacing:0.15em;color:var(--text-dim);text-transform:uppercase">Top Fishers</span>
+            <button class="btn-sm btn" onclick="fetchLeaderboard()">↻ Refresh</button>
+          </div>
+          <div class="lb-list" id="lbList"></div>
+        </div>
 
-- [GenLayer Documentation](https://docs.genlayer.com)
-- [Contract Demo](https://demo.genlayer.com/your-contract)
-- [Live Game](https://yourgame.com)
+      </div>
+    </div>
 
----
+  </div>
+</div>
 
-**Made with ❤️ for the GenLayer ecosystem**
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const CONTRACT_ADDRESS = "0x43DB29E69cB000d26031F44D03eBeAa7a0eD03b0" // ← UPDATE THIS
+const STUDIONET_CHAIN_ID = "0xF22F" // 61999 - FIXED: GenLayer Studio
+const RPC_URL = "https://studio.genlayer.com/api"
+const EXPLORER_URL = "https://explorer-studio.genlayer.com"
 
-## 📋 Deployment Checklist
+const RARITY_ICONS = { common:"🐟", uncommon:"🐠", rare:"🦈", legendary:"🐉", empty:"💨" }
+const ROD_INFO = {
+  bamboo:     { icon:"🎋", desc:"Starter rod. No bonuses.", price:0 },
+  platinum:   { icon:"⚡", desc:"+15% rare, +5% legendary", price:50 },
+  adamantite: { icon:"💎", desc:"+30% rare, +10% legendary", price:150 },
+}
+const BAIT_INFO = {
+  worm:       { icon:"🪱", desc:"+20% catch rate", price:10 },
+  shrimp:     { icon:"🦐", desc:"+30% catch, +10% rare", price:20 },
+  magic_lure: { icon:"✨", desc:"+40% catch, +20% rare", price:50 },
+}
 
-### GitHub Pages Setup
-- [ ] Upload repository to GitHub
-- [ ] Enable GitHub Pages
-- [ ] Set source to `/web-version` folder
-- [ ] Update contract address in web version
-- [ ] Test live deployment
+// ── STATE ────────────────────────────────────────────────────────────────────
+let userAddress = null
+let playerStats = null
+let casting = false
 
-### Contract Deployment
-- [ ] Deploy `FishingGameFixed.py` to GenLayer
-- [ ] Verify contract on explorer
-- [ ] Update contract address in README
-- [ ] Test all contract functions
+// ── UTILS ────────────────────────────────────────────────────────────────────
+const shortAddr = a => `${a.slice(0,6)}...${a.slice(-4)}` 
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1)
 
-### Final Testing
-- [ ] Test web version locally
-- [ ] Test MetaMask integration
-- [ ] Verify all game mechanics
-- [ ] Check mobile responsiveness
-- [ ] Validate leaderboard functionality
+function openMetaMask() {
+  window.open('https://metamask.io/download/', '_blank');
+}
+
+function showStatus(msg, type = "") {
+  const el = document.getElementById("statusMsg")
+  el.textContent = msg
+  el.className = "status-msg" + (type ? " " + type : "")
+  if (type === "success") setTimeout(() => { el.textContent = "" }, 3000)
+}
+
+function $(id) { return document.getElementById(id) }
+function show(id) { $(id).classList.remove("hidden") }
+function hide(id) { $(id).classList.add("hidden") }
+
+// ── METAMASK / NETWORK ───────────────────────────────────────────────────────
+async function addStudioNet() {
+  if (!window.ethereum) {
+    alert('MetaMask not found. Please install MetaMask to continue.');
+    return;
+  }
+  
+  try {
+    await window.ethereum.request({
+      method: "wallet_addEthereumChain",
+      params: [{
+        chainId: STUDIONET_CHAIN_ID,
+        chainName: "GenLayer Studio",
+        nativeCurrency: { name:"GEN", symbol:"GEN", decimals:18 },
+        rpcUrls: [RPC_URL],
+        blockExplorerUrls: [EXPLORER_URL],
+      }]
+    });
+    showStatus("GenLayer Studio network added!", "success");
+  } catch (error) {
+    console.error('Error adding network:', error);
+    if (error.code === 4001) {
+      showStatus("Request rejected. Please try again.", "error");
+    } else {
+      showStatus("Failed to add network: " + error.message, "error");
+    }
+  }
+}
+
+async function switchToStudioNet() {
+  if (!window.ethereum) {
+    alert('MetaMask not found. Please install MetaMask to continue.');
+    return;
+  }
+  
+  try {
+    await window.ethereum.request({ 
+      method:"wallet_switchEthereumChain", 
+      params:[{chainId:STUDIONET_CHAIN_ID}] 
+    });
+    showStatus("Switched to GenLayer Studio!", "success");
+  } catch (e) {
+    console.error('Switch error:', e);
+    if (e.code === 4902) {
+      // Network doesn't exist, add it
+      showStatus("Adding GenLayer Studio network...", "info");
+      await addStudioNet();
+    } else if (e.code === 4001) {
+      showStatus("Switch rejected by user.", "error");
+    } else {
+      showStatus("Failed to switch: " + e.message, "error");
+    }
+  }
+}
+
+async function handleConnect() {
+  console.log('=== WALLET CONNECTION START ===');
+  
+  // Check if MetaMask exists
+  if (!window.ethereum) {
+    showStatus("MetaMask not found. Please install MetaMask.", "error");
+    alert('🦊 MetaMask Required\n\nPlease install MetaMask browser extension to continue.\n\nDownload: https://metamask.io/download/');
+    return;
+  }
+  
+  try {
+    showStatus("Connecting wallet...");
+    console.log('Step 1: Checking current network...');
+    
+    // Get current chain first
+    const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+    console.log('Current chain:', currentChainId);
+    
+    // Check if we're on the right network
+    if (currentChainId !== STUDIONET_CHAIN_ID) {
+      console.log('Wrong network, switching to GenLayer Studio...');
+      showStatus("Switching to GenLayer Studio network...", "info");
+      await switchToStudioNet();
+    }
+    
+    console.log('Step 2: Requesting accounts...');
+    // Request accounts with proper error handling
+    const accounts = await window.ethereum.request({ method:"eth_requestAccounts" });
+    
+    if (!accounts || accounts.length === 0) {
+      showStatus("No accounts found. Please unlock MetaMask.", "error");
+      alert('🔓 No Accounts Found\n\nPlease unlock your MetaMask wallet and try again.');
+      return;
+    }
+    
+    console.log('Step 3: Account received:', accounts[0]);
+    userAddress = accounts[0];
+    
+    // Update UI
+    $("connectBtn").classList.add("hidden");
+    show("addressBadge");
+    $("addressBadge").textContent = "🟢 " + shortAddr(userAddress);
+    hide("connectScreen");
+    show("gameScreen");
+    showStatus("Connected! Loading your data...", "success");
+    
+    // Load game data
+    await fetchStats();
+    await fetchLeaderboard();
+    showStatus("", "");
+    
+    console.log('=== WALLET CONNECTION SUCCESS ===');
+    
+  } catch (error) {
+    console.error('Connection error:', error);
+    let errorMessage = "Connection failed";
+    
+    // Handle specific MetaMask errors
+    if (error.code === 4001) {
+      errorMessage = "Connection rejected by user";
+    } else if (error.code === -32002) {
+      errorMessage = "Request already pending. Please check MetaMask.";
+    } else if (error.code === -32603) {
+      errorMessage = "No active wallet found. Please unlock MetaMask.";
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    showStatus(errorMessage, "error");
+    alert('🔌 Connection Failed\n\n' + errorMessage + '\n\nPlease try again.');
+  }
+}
+
+// Function to force MetaMask as the primary wallet provider
+function forceMetaMaskProvider() {
+  if (window.ethereum && window.ethereum.isMetaMask) {
+    console.log('MetaMask detected and forced as primary provider');
+    // Force MetaMask to be the primary provider
+    window.web3 = new Web3(window.ethereum);
+    return true;
+  }
+  return false;
+}
+
+window.addEventListener("load", () => {
+  console.log('=== PAGE LOADED ===');
+  
+  // Force MetaMask as primary provider
+  forceMetaMaskProvider();
+  
+  // Bubbles
+  const bg = $("oceanBg")
+  for (let i = 0; i < 8; i++) {
+    const b = document.createElement("div")
+    b.className = "bubble"
+    const size = 4 + (i % 3) * 6
+    b.style.cssText = `left:${10+i*12}%;width:${size}px;height:${size}px;animation-duration:${8+i*2}s;animation-delay:${i*1.5}s` 
+    bg.appendChild(b)
+  }
+
+  // Check if MetaMask exists - NO AUTO-CONNECT
+  if (window.ethereum) {
+    console.log('MetaMask detected, waiting for manual connection...');
+    
+    // Ensure MetaMask is the primary provider
+    if (window.ethereum.isMetaMask) {
+      console.log('MetaMask confirmed as primary provider');
+    } else {
+      console.warn('MetaMask detected but not primary provider');
+    }
+    
+    // Set up event listeners FIRST
+    window.ethereum.on("accountsChanged", accounts => {
+      console.log('Accounts changed:', accounts);
+      if (accounts.length > 0) { 
+        userAddress = accounts[0]
+        console.log('User connected, fetching stats...');
+        fetchStats().then(() => fetchLeaderboard())
+      } else {
+        // User disconnected - CLEAN RESET
+        console.log('User disconnected, resetting...');
+        userAddress = null
+        playerStats = null
+        $("connectBtn").classList.remove("hidden")
+        hide("addressBadge")
+        show("connectScreen")
+        hide("gameScreen")
+        hide("registerScreen")
+        showStatus("Wallet disconnected. Please reconnect to play.", "info")
+      }
+    })
+    
+    window.ethereum.on("chainChanged", (chainId) => {
+      console.log('Chain changed to:', chainId);
+      if (chainId !== STUDIONET_CHAIN_ID) {
+        showStatus("Wrong network! Please switch to GenLayer Studio.", "error");
+        hide("gameScreen")
+        show("connectScreen")
+      } else {
+        showStatus("", "")
+        if (userAddress) {
+          fetchStats().then(() => fetchLeaderboard())
+        }
+      }
+    })
+    
+    // Check if already connected but DON'T AUTO-CONNECT
+    window.ethereum.request({method:"eth_accounts"}).then(accounts => {
+      console.log('Initial accounts check:', accounts);
+      if (accounts.length > 0) {
+        // User has MetaMask unlocked but we DON'T auto-connect
+        console.log('MetaMask is unlocked but waiting for manual connection...');
+        // Keep connect screen visible
+      } else {
+        console.log('MetaMask is locked');
+      }
+    }).catch(error => {
+      console.error('Initial accounts check failed:', error);
+    })
+  } else {
+    console.log('MetaMask not detected');
+    showStatus("MetaMask not found. Please install MetaMask extension.", "error");
+  }
+})
+
+// ── CONTRACT CALLS ───────────────────────────────────────────────────────────
+async function readContract(fn, args = []) {
+  const res = await fetch(RPC_URL, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({
+      jsonrpc:"2.0", method:"gen_call",
+      params:[{ to: CONTRACT_ADDRESS, data:{function:fn, args} }, "latest"],
+      id:1
+    })
+  })
+  const data = await res.json()
+  if (data.error) throw new Error(data.error.message)
+  return data.result
+}
+
+async function writeContract(fn, args) {
+  if (!window.ethereum) throw new Error("MetaMask not found")
+  
+  try {
+    // For GenLayer Studio, we need to use hex-encoded JSON
+    const functionCall = {
+      function: fn,
+      args: args
+    }
+    
+    // Convert to JSON string
+    const dataString = JSON.stringify(functionCall)
+    console.log('Function call data:', functionCall)
+    console.log('Data string:', dataString)
+    
+    // Convert to hex string (required by MetaMask)
+    // Use browser-compatible method
+    let hexData = '0x'
+    for (let i = 0; i < dataString.length; i++) {
+      const hex = dataString.charCodeAt(i).toString(16)
+      hexData += hex.length === 1 ? '0' + hex : hex
+    }
+    console.log('Hex data:', hexData)
+    
+    // Send transaction with hex-encoded data
+    const txParams = {
+      from: userAddress,
+      to: CONTRACT_ADDRESS,
+      data: hexData
+    }
+    
+    console.log('Transaction params:', txParams)
+    
+    const txHash = await window.ethereum.request({
+      method:"eth_sendTransaction",
+      params:[txParams]
+    })
+    
+    console.log('Transaction hash:', txHash)
+    return txHash
+  } catch (error) {
+    console.error('Transaction error:', error)
+    console.error('Error details:', error.message)
+    throw error
+  }
+}
+
+// ── GAME LOGIC ───────────────────────────────────────────────────────────────
+async function fetchStats() {
+  try {
+    const raw = await readContract("get_stats", [userAddress])
+    if (!raw) return
+    playerStats = JSON.parse(raw)
+    const isRegistered = playerStats.name && playerStats.name !== "Unknown" && playerStats.name !== ""
+    if (!isRegistered) {
+      show("registerScreen")
+      hide("gameScreen")
+    } else {
+      hide("registerScreen")
+      show("gameScreen")
+      updateUI()
+    }
+  } catch(e) {
+    show("registerScreen")
+    hide("gameScreen")
+  }
+}
+
+async function fetchLeaderboard() {
+  try {
+    const raw = await readContract("get_leaderboard", [])
+    if (!raw) return
+    const entries = JSON.parse(raw)
+    const list = $("lbList")
+    if (entries.length === 0) {
+      list.innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No entries yet. Be the first!</p>` 
+      return
+    }
+    const rankClass = i => i===0?"gold-rank":i===1?"silver-rank":i===2?"bronze-rank":""
+    list.innerHTML = entries.map((e,i) => `
+      <div class="lb-row">
+        <span class="lb-rank ${rankClass(i)}">#${i+1}</span>
+        <span class="lb-name">${e.name||shortAddr(e.address)}${e.address.toLowerCase()===userAddress?.toLowerCase()?'<span class="you-badge">you</span>':''}</span>
+        <span class="lb-pts">${e.points.toLocaleString()} pts</span>
+      </div>`).join("")
+  } catch(e) { /* silent */ }
+}
+
+function updateUI() {
+  if (!playerStats) return
+  $("statBalance").textContent = playerStats.balance.toLocaleString()
+  $("statEarned").textContent = playerStats.total_earned.toLocaleString()
+  $("statCasts").textContent = playerStats.total_casts
+
+  const rod = playerStats.rod
+  $("equippedRod").textContent = (ROD_INFO[rod]?.icon||"") + " " + cap(rod) + " Rod"
+  const bait = playerStats.bait
+  $("equippedBait").textContent = bait === "none" ? "— none" : (BAIT_INFO[bait]?.icon||"") + " " + bait.replace("_"," ")
+
+  renderShop()
+  renderInventory()
+  renderCatches()
+}
+
+function renderShop() {
+  // Rods
+  $("shopRods").innerHTML = Object.entries(ROD_INFO).map(([key, info]) => {
+    const owned = playerStats.inventory.rods.includes(key)
+    const equipped = playerStats.rod === key
+    const canBuy = playerStats.balance >= info.price
+    return `<div class="shop-item ${owned?"owned":""}">
+      <div class="shop-item-icon">${info.icon}</div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${cap(key)} Rod</div>
+        <div class="shop-item-desc">${info.desc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
+        <div class="shop-item-price">${info.price===0?"Free":info.price+" pts"}</div>
+        ${owned
+          ? `<button class="btn btn-equip${equipped?" active":""}" onclick="handleEquipRod('${key}')" ${equipped?"disabled":""}>${equipped?"Equipped":"Equip"}</button>` 
+          : `<button class="btn btn-buy" onclick="handleBuyRod('${key}')" ${!canBuy?"disabled":""}>Buy</button>` 
+        }
+      </div>
+    </div>`
+  }).join("")
+
+  // Baits
+  $("shopBaits").innerHTML = Object.entries(BAIT_INFO).map(([key, info]) => {
+    const equipped = playerStats.bait === key
+    const canBuy = playerStats.balance >= info.price
+    return `<div class="shop-item">
+      <div class="shop-item-icon">${info.icon}</div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${cap(key.replace("_"," "))}</div>
+        <div class="shop-item-desc">${info.desc}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
+        <div class="shop-item-price">${info.price} pts</div>
+        ${equipped
+          ? `<span style="font-family:var(--font-display);font-size:0.62rem;color:var(--teal)">Ready</span>` 
+          : `<button class="btn btn-buy" onclick="handleBuyBait('${key}')" ${!canBuy?"disabled":""}>Buy</button>` 
+        }
+      </div>
+    </div>`
+  }).join("")
+}
+
+function renderInventory() {
+  // Rods owned
+  $("invRods").innerHTML = playerStats.inventory.rods.map(rod => {
+    const equipped = playerStats.rod === rod
+    return `<div class="shop-item ${equipped?"owned":""}">
+      <div class="shop-item-icon">${ROD_INFO[rod]?.icon||"🎣"}</div>
+      <div class="shop-item-info">
+        <div class="shop-item-name">${cap(rod)} Rod</div>
+        <div class="shop-item-desc">${ROD_INFO[rod]?.desc||""}</div>
+      </div>
+      <button class="btn btn-equip${equipped?" active":""}" onclick="handleEquipRod('${rod}')" ${equipped?"disabled":""}>${equipped?"Equipped":"Equip"}</button>
+    </div>`
+  }).join("")
+
+  // Active bait
+  const bait = playerStats.bait
+  $("invBait").innerHTML = bait === "none"
+    ? `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem">No bait equipped. Buy from shop.</p>` 
+    : `<div class="shop-item owned">
+        <div class="shop-item-icon">${BAIT_INFO[bait]?.icon||"🪝"}</div>
+        <div class="shop-item-info">
+          <div class="shop-item-name">${cap(bait.replace("_"," "))}</div>
+          <div class="shop-item-desc">Will be consumed on next cast</div>
+        </div>
+        <span style="font-family:var(--font-display);font-size:0.62rem;color:var(--teal)">Ready</span>
+      </div>`
+}
+
+function renderCatches() {
+  const catches = [...(playerStats.recent_catches||[])].reverse()
+  if (catches.length === 0) {
+    $("catchesList").innerHTML = `<p style="color:var(--text-dim);font-style:italic;font-size:0.85rem;text-align:center;padding:2rem 0">No catches yet. Cast your line!</p>` 
+    return
+  }
+  $("catchesList").innerHTML = catches.map(c => `
+    <div class="catch-row ${c.rarity}">
+      <span style="font-size:1.05rem">${RARITY_ICONS[c.rarity]||"🐟"}</span>
+      <span class="catch-row-name">${c.fish==="empty"?"Got away...":c.fish}</span>
+      <span class="catch-row-pts">${c.points>0?"+"+c.points:"—"}</span>
+    </div>`).join("")
+}
+
+function showCatch(c) {
+  const el = $("catchReveal")
+  el.className = "catch-reveal show " + c.rarity
+  $("catchRarity").className = "rarity-badge " + c.rarity
+  $("catchRarity").textContent = c.rarity
+  $("catchName").className = "catch-fish-name " + c.rarity
+  $("catchName").textContent = (RARITY_ICONS[c.rarity]||"") + " " + (c.fish==="empty"?"Nothing...":c.fish)
+  $("catchPts").textContent = c.points>0 ? "+"+c.points+" pts" : ""
+  $("catchMsg").textContent = c.message
+}
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+async function handleRegister() {
+  const name = $("nameInput").value.trim()
+  if (!name) return
+  
+  try {
+    $("registerBtn").disabled = true
+    showStatus("Registering...")
+    
+    // Debug logging
+    console.log('Registering with name:', name)
+    console.log('Function data:', {function: "register", args: [name]})
+    
+    const hash = await writeContract("register", [name])
+    showStatus("Registered! Waiting for confirmation...")
+    showTx(hash)
+    
+    // Wait for transaction confirmation then refresh stats
+    setTimeout(async () => { 
+      console.log('Fetching stats after registration...')
+      await fetchStats(); 
+      showStatus("", "")
+    }, 8000)
+  } catch(e) {
+    console.error('Registration error:', e)
+    showStatus(e.message||"Registration failed","error")
+    $("registerBtn").disabled = false
+  }
+}
+
+async function handleCast() {
+  if (casting) return
+  casting = true
+  const btn = $("castBtn")
+  const water = $("waterSurface")
+  btn.textContent = "⟳ Casting..."
+  btn.classList.add("casting")
+  btn.disabled = true
+  water.classList.add("casting")
+  showStatus("Casting line...")
+  
+  try {
+    console.log('Starting cast transaction...')
+    const hash = await writeContract("cast", [])
+    console.log('Cast transaction hash:', hash)
+    showTx(hash)
+    showStatus("Line cast! Waiting for validators...")
+    
+    // Start checking for results more frequently
+    let checkCount = 0
+    const maxChecks = 30 // Check for 30 seconds
+    
+    const checkResult = async () => {
+      checkCount++
+      console.log(`Checking cast result... attempt ${checkCount}`)
+      
+      try {
+        await fetchStats()
+        if (playerStats?.recent_catches?.length > 0) {
+          const latest = playerStats.recent_catches[playerStats.recent_catches.length-1]
+          console.log('Cast result found:', latest)
+          showCatch(latest)
+          await fetchLeaderboard()
+          
+          // Reset UI
+          btn.textContent = "🎣 Cast Line"
+          btn.classList.remove("casting")
+          btn.disabled = false
+          water.classList.remove("casting")
+          casting = false
+          showStatus("")
+          return
+        }
+        
+        if (checkCount < maxChecks) {
+          // Check again in 1 second
+          setTimeout(checkResult, 1000)
+        } else {
+          // Timeout reached
+          console.error('Cast result timeout after 30 seconds')
+          showStatus("Cast timeout. Please try again.", "error")
+          btn.textContent = "🎣 Cast Line"
+          btn.classList.remove("casting")
+          btn.disabled = false
+          water.classList.remove("casting")
+          casting = false
+        }
+      } catch (error) {
+        console.error('Error checking cast result:', error)
+        if (checkCount < maxChecks) {
+          setTimeout(checkResult, 1000)
+        } else {
+          showStatus("Cast failed. Please try again.", "error")
+          btn.textContent = "🎣 Cast Line"
+          btn.classList.remove("casting")
+          btn.disabled = false
+          water.classList.remove("casting")
+          casting = false
+        }
+      }
+    }
+    
+    // Start checking after 2 seconds (initial delay for transaction)
+    setTimeout(checkResult, 2000)
+    
+  } catch(e) {
+    console.error('Cast transaction error:', e)
+    showStatus(e.message||"Cast failed","error")
+    btn.textContent = "🎣 Cast Line"
+    btn.classList.remove("casting")
+    btn.disabled = false
+    water.classList.remove("casting")
+    casting = false
+  }
+}
+
+async function handleBuyRod(rodType) {
+  try {
+    showStatus(`Buying ${rodType} rod...`)
+    const hash = await writeContract("buy_rod", [rodType])
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("Rod purchased!","success") }, 8000)
+  } catch(e) { showStatus(e.message||"Purchase failed","error") }
+}
+
+async function handleBuyBait(baitType) {
+  try {
+    showStatus(`Buying ${baitType}...`)
+    const hash = await writeContract("buy_bait", [baitType])
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("Bait equipped!","success") }, 8000)
+  } catch(e) { showStatus(e.message||"Purchase failed","error") }
+}
+
+async function handleEquipRod(rodType) {
+  try {
+    showStatus("Equipping rod...")
+    const hash = await writeContract("equip_rod", [rodType])
+    showTx(hash)
+    setTimeout(async () => { await fetchStats(); showStatus("Rod equipped!","success") }, 8000)
+  } catch(e) { showStatus(e.message||"Failed","error") }
+}
+
+function showTx(hash) {
+  const el = $("txStatus")
+  el.classList.remove("hidden")
+  el.innerHTML = `TX: <a href="${EXPLORER_URL}/transactions/${hash}" target="_blank">${shortAddr(hash)}</a>` 
+}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ["shop","inventory","catches","leaderboard"].forEach(t => {
+    $("tab"+cap(t)).classList.add("hidden")
+  })
+  $("tab"+cap(name)).classList.remove("hidden")
+  document.querySelectorAll(".tab").forEach((el,i) => {
+    el.classList.toggle("active", ["shop","inventory","catches","leaderboard"][i]===name)
+  })
+  if (name==="leaderboard") fetchLeaderboard()
+}
+</script>
+</body>
+</html>
