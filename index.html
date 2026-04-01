@@ -55,6 +55,9 @@ body {
     text-align: center;
     width: 340px;
     z-index: 5;
+
+    /* 🔥 FIX: turunin posisi biar gak nutup teks */
+    transform: translateY(90px);
 }
 
 /* TITLE */
@@ -173,68 +176,32 @@ function showStatus(message, type = '') {
 
 // WALLET CONNECTION
 async function connectWallet() {
-    console.log('=== WALLET CONNECTION START ===');
-    
-    // Check if MetaMask exists
     if (!window.ethereum) {
-        showStatus('MetaMask not found. Please install MetaMask.', 'error');
-        alert('🦊 MetaMask Required\n\nPlease install MetaMask browser extension to continue.\n\nDownload: https://metamask.io/download/');
+        showStatus('MetaMask not found.', 'error');
+        alert('Install MetaMask first.');
         return;
     }
     
     try {
         showStatus('Connecting wallet...');
-        console.log('Step 1: Checking current network...');
         
-        // Get current chain
         const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-        console.log('Current chain:', currentChainId);
         
-        // Check if we're on right network
         if (currentChainId !== STUDIONET_CHAIN_ID) {
-            console.log('Wrong network, switching to GenLayer Studio...');
-            showStatus('Switching to GenLayer Studio network...', 'info');
             await switchToStudioNet();
         }
         
-        console.log('Step 2: Requesting accounts...');
-        // Request accounts
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         
-        if (!accounts || accounts.length === 0) {
-            showStatus('No accounts found. Please unlock MetaMask.', 'error');
-            alert('🔓 No Accounts Found\n\nPlease unlock your MetaMask wallet and try again.');
-            return;
-        }
-        
-        console.log('Step 3: Account received:', accounts[0]);
         userAddress = accounts[0];
         isConnected = true;
         
-        // Update UI
-        walletBtn.textContent = `🦊 ${userAddress.substring(0, 6)}...${userAddress.substring(userAddress.length - 4)}`;
+        walletBtn.textContent = `🦊 ${userAddress.substring(0, 6)}...${userAddress.slice(-4)}`;
         walletBtn.style.background = '#44ff44';
         showStatus('Wallet connected!', 'success');
         
-        console.log('=== WALLET CONNECTION SUCCESS ===');
-        
     } catch (error) {
-        console.error('Connection error:', error);
-        let errorMessage = "Connection failed";
-        
-        // Handle specific MetaMask errors
-        if (error.code === 4001) {
-            errorMessage = "Connection rejected by user";
-        } else if (error.code === -32002) {
-            errorMessage = "Request already pending. Please check MetaMask.";
-        } else if (error.code === -32603) {
-            errorMessage = "No active wallet found. Please unlock MetaMask.";
-        } else if (error.message) {
-            errorMessage = error.message;
-        }
-        
-        showStatus(errorMessage, 'error');
-        alert('🔌 Connection Failed\n\n' + errorMessage + '\n\nPlease try again.');
+        showStatus('Connection failed', 'error');
     }
 }
 
@@ -245,118 +212,57 @@ async function switchToStudioNet() {
             method: "wallet_switchEthereumChain", 
             params: [{ chainId: STUDIONET_CHAIN_ID }] 
         });
-        showStatus("Switched to GenLayer Studio!", "success");
     } catch (e) {
-        console.error('Switch error:', e);
         if (e.code === 4902) {
-            // Network doesn't exist, add it
-            showStatus("Adding GenLayer Studio network...", "info");
             await addStudioNet();
-        } else if (e.code === 4001) {
-            showStatus("Switch rejected by user.", "error");
-        } else {
-            showStatus("Failed to switch: " + e.message, "error");
         }
     }
 }
 
 async function addStudioNet() {
-    try {
-        await window.ethereum.request({
-            method: "wallet_addEthereumChain",
-            params: [{
-                chainId: STUDIONET_CHAIN_ID,
-                chainName: "GenLayer Studio",
-                nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
-                rpcUrls: [RPC_URL],
-                blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
-            }]
-        });
-        showStatus("GenLayer Studio network added!", "success");
-    } catch (error) {
-        console.error('Error adding network:', error);
-        if (error.code === 4001) {
-            showStatus("Request rejected. Please try again.", "error");
-        } else {
-            showStatus("Failed to add network: " + error.message, "error");
-        }
-    }
+    await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+            chainId: STUDIONET_CHAIN_ID,
+            chainName: "GenLayer Studio",
+            nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
+            rpcUrls: [RPC_URL],
+            blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
+        }]
+    });
 }
 
 // GAME FUNCTIONS
 function startGame() {
     const nickname = nicknameInput.value.trim();
     if (!nickname) {
-        showStatus('Please enter a nickname', 'error');
+        showStatus('Enter nickname', 'error');
         return;
     }
     
     if (!isConnected) {
-        showStatus('Please connect wallet first', 'error');
+        showStatus('Connect wallet first', 'error');
         return;
     }
     
-    showStatus(`Starting game for ${nickname}...`, 'success');
     gameUI.style.display = 'block';
     gameUI.innerHTML = `
         <h3>🎣 ${nickname}'s Fishing Game</h3>
-        <p>Wallet: ${userAddress.substring(0, 6)}...${userAddress.substring(userAddress.length - 4)}</p>
         <button onclick="castLine()">Cast Line</button>
     `;
 }
 
 function castLine() {
-    showStatus('Casting line...', 'info');
+    showStatus('Casting...', 'info');
     setTimeout(() => {
         showStatus('Fish caught! 🐟', 'success');
     }, 2000);
 }
 
-// EVENT LISTENERS
+// EVENTS
 walletBtn.addEventListener('click', connectWallet);
 startBtn.addEventListener('click', startGame);
 
-// WALLET EVENT LISTENERS
-if (window.ethereum) {
-    window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-            userAddress = accounts[0];
-            walletBtn.textContent = `🦊 ${userAddress.substring(0, 6)}...${userAddress.substring(userAddress.length - 4)}`;
-            showStatus('Account changed', 'info');
-        } else {
-            userAddress = null;
-            isConnected = false;
-            walletBtn.textContent = 'Connect Wallet';
-            walletBtn.style.background = '#00cfff';
-            showStatus('Wallet disconnected', 'error');
-        }
-    });
-    
-    window.ethereum.on('chainChanged', (chainId) => {
-        if (chainId !== STUDIONET_CHAIN_ID) {
-            showStatus('Wrong network! Please switch to GenLayer Studio.', 'error');
-        } else {
-            showStatus('Correct network', 'success');
-        }
-    });
-}
-
-// PAGE LOAD
-window.addEventListener('load', () => {
-    console.log('Page loaded, checking wallet...');
-    if (window.ethereum) {
-        console.log('MetaMask detected');
-        // Check if already connected (but don't auto-connect)
-        window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
-            if (accounts.length > 0) {
-                console.log('MetaMask is unlocked but waiting for manual connection');
-            }
-        });
-    } else {
-        console.log('MetaMask not detected');
-        showStatus('MetaMask not found. Please install MetaMask extension.', 'error');
-    }
-});
 </script>
 
 </body>
