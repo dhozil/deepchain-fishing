@@ -179,23 +179,32 @@ const ABI = [
 async function connectWallet() {
     try {
         if (!window.ethereum) {
-            alert("Install MetaMask!");
+            alert("Please install MetaMask");
             return;
         }
 
+        // request wallet connect
+        await window.ethereum.request({
+            method: "eth_requestAccounts"
+        });
+
         provider = new ethers.BrowserProvider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
         signer = await provider.getSigner();
         userAddress = await signer.getAddress();
 
         contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-        document.getElementById("connectBtn").innerText = "Connected";
+        document.getElementById("connectBtn").innerText = "Connected ✅";
         document.getElementById("wallet").innerText = "Wallet: " + userAddress;
 
     } catch (err) {
-        console.error(err);
-        alert("Connection failed");
+        console.error("FULL ERROR:", err);
+
+        if (err.code === 4001) {
+            alert("User rejected connection");
+        } else {
+            alert("Connection failed - check network (GenLayer)");
+        }
     }
 }
 
