@@ -10,17 +10,29 @@
 <style>
 body {
   margin:0;
-  font-family: 'Inter', sans-serif;
+  font-family:'Inter', sans-serif;
   background: radial-gradient(circle at top, #0a1a2f, #020817);
   color:#e6f0ff;
 }
 
-/* HEADER */
+/* WALLET */
 .wallet-bar {
   position:fixed;
   top:20px;
   right:20px;
   z-index:999;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+#addr {
+  background: rgba(0,212,255,0.1);
+  padding:6px 10px;
+  border-radius:20px;
+  border:1px solid rgba(0,212,255,0.3);
+  font-size:12px;
+  color:#00d4ff;
 }
 
 .btn {
@@ -37,7 +49,7 @@ body {
   color:#001018;
 }
 
-/* CENTER SCREEN */
+/* CENTER */
 .center-screen {
   height:100vh;
   display:flex;
@@ -50,31 +62,30 @@ body {
 
 .banner {
   width:100%;
-  max-width:700px;
+  max-width:720px;
   border-radius:14px;
   box-shadow:0 0 60px rgba(0,212,255,0.3);
   transition:0.3s;
 }
-.banner:hover {
-  transform:scale(1.02);
-}
+.banner:hover { transform:scale(1.03); }
 
 h2 {
   font-family:'Cinzel', serif;
-  font-size:2rem;
+  font-size:2.2rem;
 }
 
 input {
-  padding:10px;
+  padding:12px;
   border-radius:6px;
   border:1px solid #00d4ff;
   background:#021020;
   color:white;
+  width:250px;
 }
 
-/* GAME */
 .hidden { display:none }
 
+/* GAME */
 .game {
   max-width:1100px;
   margin:120px auto;
@@ -89,20 +100,27 @@ input {
 
 .card {
   background:#04152a;
-  padding:15px;
+  padding:15px 20px;
   border-radius:10px;
   border:1px solid #0af;
+  font-size:18px;
 }
 
 .cast-btn {
-  font-size:18px;
-  padding:15px 30px;
+  font-size:20px;
+  padding:15px 40px;
   margin-top:20px;
+}
+
+.result {
+  margin-top:20px;
+  font-size:22px;
+  text-align:center;
 }
 
 /* SHOP */
 .shop {
-  margin-top:20px;
+  margin-top:30px;
   display:flex;
   flex-direction:column;
   gap:10px;
@@ -111,33 +129,27 @@ input {
 .shop-item {
   display:flex;
   justify-content:space-between;
+  align-items:center;
   background:#021020;
-  padding:10px;
-  border-radius:6px;
-}
-
-/* RESULT */
-.result {
-  margin-top:20px;
-  font-size:20px;
+  padding:12px;
+  border-radius:8px;
 }
 </style>
 </head>
 
 <body>
 
-<!-- CONNECT -->
+<!-- WALLET -->
 <div class="wallet-bar">
-  <button class="btn" onclick="connect()">Connect Wallet</button>
+  <span id="addr"></span>
+  <button class="btn" onclick="connect()" id="connectBtn">Connect</button>
 </div>
 
 <!-- HERO -->
 <div class="center-screen" id="hero">
   <img src="banner.png" class="banner">
-
   <h2>On-chain Fishing Game</h2>
   <p>For GenLayer Community</p>
-
   <button class="btn" onclick="connect()">Start Fishing</button>
 </div>
 
@@ -152,18 +164,17 @@ input {
 <div class="game hidden" id="game">
 
   <div class="stats">
-    <div class="card">Balance: <span id="balance">0</span></div>
-    <div class="card">Total: <span id="total">0</span></div>
-    <div class="card">Casts: <span id="casts">0</span></div>
+    <div class="card">💰 Balance: <span id="balance">0</span></div>
+    <div class="card">🏆 Total: <span id="total">0</span></div>
+    <div class="card">🎣 Casts: <span id="casts">0</span></div>
   </div>
 
   <div style="text-align:center">
-    <button class="btn cast-btn" onclick="cast()">🎣 CAST</button>
+    <button class="btn cast-btn" onclick="cast()">🎣 CAST LINE</button>
   </div>
 
   <div class="result" id="result"></div>
 
-  <!-- SHOP -->
   <div class="shop" id="shop"></div>
 
 </div>
@@ -203,8 +214,19 @@ async function sendTx(fn,args) {
 }
 
 async function connect(){
+  if (!window.ethereum) {
+    alert("Install MetaMask first")
+    return
+  }
+
   const acc = await ethereum.request({method:"eth_requestAccounts"})
   user = acc[0]
+
+  // show address
+  const short = user.slice(0,6)+"..."+user.slice(-4)
+  document.getElementById("addr").innerText = short
+
+  document.getElementById("connectBtn").innerText = "Connected"
 
   document.getElementById("hero").classList.add("hidden")
 
@@ -214,6 +236,7 @@ async function connect(){
 async function load(){
   try{
     stats = await rpcCall("get_stats",[user])
+
     if(!stats.name || stats.name==="Unknown"){
       document.getElementById("register").classList.remove("hidden")
     } else {
@@ -226,8 +249,13 @@ async function load(){
 
 async function register(){
   const name = document.getElementById("nameInput").value
+  if(!name) return alert("Enter name")
+
   await sendTx("register",[name])
-  setTimeout(startGame,4000)
+
+  document.getElementById("register").innerHTML = "Saving..."
+
+  setTimeout(startGame,5000)
 }
 
 function startGame(){
@@ -238,6 +266,7 @@ function startGame(){
 
 async function refresh(){
   stats = await rpcCall("get_stats",[user])
+
   document.getElementById("balance").innerText = stats.balance
   document.getElementById("total").innerText = stats.total_earned
   document.getElementById("casts").innerText = stats.total_casts
@@ -246,27 +275,24 @@ async function refresh(){
 }
 
 async function cast(){
-  document.getElementById("result").innerText="Casting..."
+  document.getElementById("result").innerText = "Casting..."
+
   await sendTx("cast",[])
 
   setTimeout(async ()=>{
     await refresh()
     const last = stats.recent_catches.slice(-1)[0]
+
     document.getElementById("result").innerText =
       last.fish==="empty"
-      ? "Nothing..."
-      : `You caught ${last.fish} (+${last.points})`
-  },4000)
+      ? "💨 Nothing..."
+      : `🐟 ${last.fish} (+${last.points})`
+  },5000)
 }
 
 function renderShop(){
-  const el = document.getElementById("shop")
-  el.innerHTML = `
+  document.getElementById("shop").innerHTML = `
     <h3>Shop</h3>
-
-    <div class="shop-item">
-      Bamboo Rod (Free)
-    </div>
 
     <div class="shop-item">
       Platinum Rod - 50
@@ -274,8 +300,18 @@ function renderShop(){
     </div>
 
     <div class="shop-item">
+      Adamantite Rod - 150
+      <button onclick="buyRod('adamantite')">Buy</button>
+    </div>
+
+    <div class="shop-item">
       Worm - 10
       <button onclick="buyBait('worm')">Buy</button>
+    </div>
+
+    <div class="shop-item">
+      Shrimp - 20
+      <button onclick="buyBait('shrimp')">Buy</button>
     </div>
   `
 }
