@@ -20,10 +20,7 @@ body {
     width: 100%;
     height: 100vh;
     background: url("banner.png") center/cover no-repeat;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+    z-index: 1;
 }
 
 /* CONNECT BUTTON */
@@ -38,40 +35,47 @@ body {
     border-radius: 12px;
     cursor: pointer;
     font-weight: bold;
+    z-index: 9999;
 }
 
 /* REGISTER BOX */
 #registerBox {
     position: absolute;
-    top: 72%; /* ⬅️ lebih turun lagi */
+    top: 75%;
     left: 50%;
     transform: translate(-50%, -50%);
     
-    background: rgba(0,0,0,0.55);
+    background: rgba(0,0,0,0.6);
     padding: 22px;
     border-radius: 14px;
     text-align: center;
-    backdrop-filter: blur(6px); /* biar lebih clean & modern */
+    backdrop-filter: blur(6px);
+
+    z-index: 2;
 }
 
-/* kecilkan teks */
 #registerBox h1 {
     font-size: 28px;
     margin-bottom: 12px;
 }
 
-/* kecilkan input */
 #registerBox input {
     padding: 12px;
     font-size: 16px;
+    border-radius: 10px;
+    border: none;
     width: 220px;
     margin-bottom: 10px;
 }
 
-/* kecilkan tombol */
 #registerBox button {
     padding: 12px 18px;
     font-size: 16px;
+    border-radius: 10px;
+    border: none;
+    background: #00c3ff;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 /* GAME UI */
@@ -173,13 +177,26 @@ const ABI = [
 ];
 
 async function connectWallet() {
-    provider = new ethers.BrowserProvider(window.ethereum);
-    signer = await provider.getSigner();
-    userAddress = await signer.getAddress();
+    try {
+        if (!window.ethereum) {
+            alert("Install MetaMask!");
+            return;
+        }
 
-    contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = await provider.getSigner();
+        userAddress = await signer.getAddress();
 
-    document.getElementById("wallet").innerText = "Wallet: " + userAddress;
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+        document.getElementById("connectBtn").innerText = "Connected";
+        document.getElementById("wallet").innerText = "Wallet: " + userAddress;
+
+    } catch (err) {
+        console.error(err);
+        alert("Connection failed");
+    }
 }
 
 async function register() {
@@ -189,28 +206,42 @@ async function register() {
     }
 
     const name = document.getElementById("nickname").value;
-    if (!name) return;
+    if (!name) {
+        alert("Enter nickname!");
+        return;
+    }
 
-    const tx = await contract.register(name);
-    await tx.wait();
+    try {
+        const tx = await contract.register(name);
+        await tx.wait();
 
-    document.getElementById("hero").style.display = "none";
-    document.getElementById("game").style.display = "block";
+        document.getElementById("hero").style.display = "none";
+        document.getElementById("game").style.display = "block";
 
-    loadStats();
+        loadStats();
+
+    } catch (err) {
+        console.error(err);
+        alert("Register failed");
+    }
 }
 
 async function cast() {
     document.getElementById("animation").style.display = "block";
     document.getElementById("result").innerText = "";
 
-    const tx = await contract.cast();
-    await tx.wait();
+    try {
+        const tx = await contract.cast();
+        await tx.wait();
 
-    document.getElementById("animation").style.display = "none";
-    document.getElementById("result").innerText = "🎉 You cast your line!";
+        document.getElementById("animation").style.display = "none";
+        document.getElementById("result").innerText = "🎉 You cast your line!";
 
-    loadStats();
+        loadStats();
+    } catch (err) {
+        console.error(err);
+        alert("Cast failed");
+    }
 }
 
 async function buyRod(type) {
