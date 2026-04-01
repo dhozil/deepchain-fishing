@@ -137,11 +137,11 @@ async function connectWallet() {
 
         provider = new ethers.providers.Web3Provider(window.ethereum);
 
-        // Add / Switch Network (GenLayer)
+        // FIX NETWORK GENLAYER
         await window.ethereum.request({
             method: "wallet_addEthereumChain",
             params: [{
-                chainId: "0xF22F",
+                chainId: "0xF21F", // ✅ FIXED
                 chainName: "GenLayer Studio",
                 rpcUrls: ["https://studio.genlayer.com/api"],
                 nativeCurrency: {
