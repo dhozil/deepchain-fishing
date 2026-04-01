@@ -832,14 +832,27 @@ function showCatch(c) {
 async function handleRegister() {
   const name = $("nameInput").value.trim()
   if (!name) return
+  
   try {
     $("registerBtn").disabled = true
     showStatus("Registering...")
+    
+    // Debug logging
+    console.log('Registering with name:', name)
+    console.log('Function data:', {function: "register", args: [name]})
+    
     const hash = await writeContract("register", [name])
     showStatus("Registered! Waiting for confirmation...")
     showTx(hash)
-    setTimeout(async () => { await fetchStats(); showStatus("", "") }, 8000)
+    
+    // Wait for transaction confirmation then refresh stats
+    setTimeout(async () => { 
+      console.log('Fetching stats after registration...')
+      await fetchStats(); 
+      showStatus("", "")
+    }, 8000)
   } catch(e) {
+    console.error('Registration error:', e)
     showStatus(e.message||"Registration failed","error")
     $("registerBtn").disabled = false
   }
