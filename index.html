@@ -508,11 +508,164 @@ body.fishing-active #leaderboard {
 </div>
 
 <script>
-// CONFIG
-const STUDIONET_CHAIN_ID = "0xF22F";
+// ============================================
+// GENLAYER CONFIGURATION
+// ============================================
+const STUDIONET_CHAIN_ID = "0xF22F"; // 61999 in decimal - matches deployment
 const RPC_URL = "https://studio.genlayer.com/api";
+const CONTRACT_ADDRESS = "0x53a55DF00808F2b408266DB9E6130Be579708611";
 
-// 🎣 FISH SYSTEM
+// Mock mode untuk testing UI (set true kalau contract error)
+const MOCK_MODE = false;
+
+// ============================================
+// RPC HELPERS
+// ============================================
+function normalizeAddress(addr) {
+    if (!addr) return addr;
+    return addr.toLowerCase();
+}
+
+async function genCall(method, args = []) {
+    console.log('genCall:', method, args, 'MOCK_MODE:', MOCK_MODE);
+    
+    if (MOCK_MODE) {
+        // Return mock data for testing UI
+        if (method === 'get_leaderboard') {
+            return [
+                {address: '0x1234...5678', name: 'FisherKing', points: 1250},
+                {address: '0xabcd...efgh', name: 'OceanMaster', points: 980},
+                {address: '0x9999...0000', name: 'DeepDiver', points: 750}
+            ];
+        }
+        if (method === 'get_stats') {
+            return {
+                name: 'TestPlayer',
+                balance: 100,
+                rod: 'bamboo',
+                bait: 'none',
+                recent_catches: [],
+                total_casts: 0,
+                total_earned: 0
+            };
+        }
+        return {};
+    }
+    
+    if (!userAddress) {
+        throw new Error('Wallet not connected');
+    }
+    
+    // Build method string with args - no quotes for addresses
+    let methodStr = method;
+    if (!method.includes('(')) {
+        if (args.length > 0) {
+            // Join args without quotes (addresses don't need quotes in GenLayer)
+            methodStr += '(' + args.join(',') + ')';
+        } else {
+            methodStr += '()';
+        }
+    }
+    
+    console.log('Method string:', methodStr);
+    
+    // Encode to hex
+    const hexData = '0x' + Array.from(methodStr)
+        .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join('');
+    
+    try {
+        // Use eth_call via MetaMask
+        const result = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+                from: userAddress,
+                to: CONTRACT_ADDRESS,
+                data: hexData
+            }, 'latest']
+        });
+        
+        console.log('eth_call result:', result);
+        
+        // Decode hex result
+        if (result && result !== '0x' && result.startsWith('0x')) {
+            try {
+                const hex = result.slice(2);
+                let str = '';
+                for (let i = 0; i < hex.length; i += 2) {
+                    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+                }
+                console.log('Decoded:', str);
+                try {
+                    return JSON.parse(str);
+                } catch (e) {
+                    return str;
+                }
+            } catch (e) {
+                return result;
+            }
+        }
+        
+        return result;
+    } catch (e) {
+        console.error('genCall error:', e);
+        throw e;
+    }
+}
+
+// Simple hex encoding for strings
+function stringToHex(str) {
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+        hex += str.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    return hex;
+}
+
+async function sendTransaction(method, args = []) {
+    if (!userAddress) throw new Error('Wallet not connected');
+    
+    showStatus('Processing transaction...', '');
+    
+    try {
+        // Build calldata: method_name(arg1,arg2,...)
+        const calldata = method + '(' + args.join(',') + ')';
+        
+        // Convert string to hex for MetaMask
+        const hexData = '0x' + Array.from(calldata)
+            .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+            .join('');
+        
+        const txParams = {
+            from: userAddress,
+            to: CONTRACT_ADDRESS,
+            data: hexData,
+            gas: '0x186A0'
+        };
+        
+        console.log('Sending transaction:', calldata);
+        console.log('Hex data:', hexData);
+        
+        // Send via MetaMask - authentic GenLayer transaction
+        const result = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [txParams]
+        });
+        
+        showStatus('Transaction sent! Waiting for consensus...', '');
+        await new Promise(resolve => setTimeout(resolve, 15000));
+        
+        showStatus('Transaction confirmed!', 'success');
+        return result;
+    } catch (error) {
+        showStatus('Transaction failed: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+// ============================================
+// FISH DATA (Matching Contract)
+// ============================================
 const FISH_TYPES = {
     // Common
     'small_fish': { emoji: '🐟', name: 'Small Fish', tokens: 1, rarity: 'common' },
@@ -552,6 +705,7 @@ const SHOP_ITEMS = {
 // STATE
 let userAddress = null;
 let isConnected = false;
+let isRegistered = false;
 let playerData = {
     nickname: '',
     tokens: 0,
@@ -682,7 +836,7 @@ function showStatus(message, type = '') {
 // WALLET
 async function connectWallet() {
     if (!window.ethereum) {
-        showStatus('MetaMask not found', 'error');
+        showStatus('MetaMask not found. Please install MetaMask.', 'error');
         return;
     }
     
@@ -698,10 +852,83 @@ async function connectWallet() {
 
         walletBtn.textContent = `🦊 ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
         walletBtn.style.background = '#44ff44';
+        
+        // Auto-load player data from contract
+        await loadPlayerData();
+        
+        showStatus('Wallet connected!', 'success');
+    } catch (e) {
+        showStatus('Connection failed: ' + e.message, 'error');
+    }
+}
 
-        showStatus('Connected!', 'success');
-    } catch {
-        showStatus('Connection failed', 'error');
+// LOAD PLAYER DATA FROM CONTRACT
+async function loadPlayerData(retryCount = 0) {
+    if (!userAddress) return;
+    
+    const normalizedAddr = normalizeAddress(userAddress);
+    console.log('Loading stats for address:', normalizedAddr);
+    
+    try {
+        const stats = await genCall('get_stats', [normalizedAddr]);
+        console.log('Stats loaded:', stats);
+        
+        if (stats && stats.name && stats.name !== 'Unknown') {
+            isRegistered = true;
+            playerData = {
+                nickname: stats.name,
+                tokens: stats.balance || 100,
+                rodLevel: ['bamboo', 'platinum', 'adamantite', 'mythic'].indexOf(stats.rod) + 1 || 1,
+                bait: stats.bait === 'none' ? 0 : 3,
+                totalFish: stats.recent_catches ? stats.recent_catches.filter(c => c.fish !== 'empty').length : 0,
+                bestCatch: stats.recent_catches && stats.recent_catches.length > 0 
+                    ? stats.recent_catches.filter(c => c.fish !== 'empty').reduce((best, c) => 
+                        c.points > (best?.points || 0) ? c : best, null)
+                    : null
+            };
+            nicknameInput.value = playerData.nickname;
+            console.log('Player data loaded from contract:', playerData);
+        } else {
+            console.log('Player not registered yet');
+            isRegistered = false;
+        }
+    } catch (e) {
+        console.log('Error loading player data:', e);
+        // Player not registered - this is OK
+        isRegistered = false;
+    }
+}
+
+// LOAD LEADERBOARD FROM CONTRACT
+async function loadLeaderboard() {
+    try {
+        // Pass empty array - genCall will add () automatically
+        const leaderboard = await genCall('get_leaderboard', []);
+        const listEl = document.getElementById('leaderboardList');
+        
+        if (!leaderboard || leaderboard.length === 0) {
+            listEl.innerHTML = '<p style="text-align: center; color: #999;">No players yet</p>';
+            return;
+        }
+        
+        listEl.innerHTML = leaderboard.map((player, index) => {
+            const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+            const isCurrentPlayer = player.address === userAddress;
+            
+            return `
+                <div class="leaderboard-item ${isCurrentPlayer ? 'current-player' : ''}">
+                    <span class="leaderboard-rank ${rankClass}">
+                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}th`}
+                    </span>
+                    <span class="leaderboard-name">${player.name || 'Unknown'}</span>
+                    <span class="leaderboard-tokens">${player.points || 0}</span>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.log('Leaderboard error:', e.message);
+        // Don't show error in UI, just empty state
+        document.getElementById('leaderboardList').innerHTML = '<p style="text-align: center; color: #999;">Leaderboard loading...</p>';
     }
 }
 
@@ -728,21 +955,40 @@ async function switchToStudioNet() {
     }
 }
 
-// 🎣 GAME FUNCTIONS
-function startGame() {
+// 🎣 GAME FUNCTIONS (GENLAYER INTEGRATION)
+async function startGame() {
     const nickname = nicknameInput.value.trim();
+    
     if (!nickname) {
         showStatus('Enter nickname', 'error');
         return;
     }
-
+    
     if (!isConnected) {
         showStatus('Connect wallet first', 'error');
         return;
     }
 
-    playerData.nickname = nickname;
-    showFishingScreen();
+    try {
+        if (!isRegistered) {
+            console.log('Registering player:', nickname);
+            await sendTransaction('register', [`"${nickname}"`]);
+            await new Promise(resolve => setTimeout(resolve, 8000));
+        }
+        
+        playerData.nickname = nickname;
+        await loadPlayerData(0);
+        
+        if (playerData.nickname === 'Unknown' || !playerData.nickname) {
+            showStatus('Registration pending... Please try again', 'error');
+            return;
+        }
+        
+        showFishingScreen();
+        await loadLeaderboard();
+    } catch (e) {
+        showStatus('Registration failed: ' + e.message, 'error');
+    }
 }
 
 function showFishingScreen() {
@@ -764,179 +1010,221 @@ function updateStats() {
     
     document.getElementById('statsContent').innerHTML = `
         <p>Total Fish: ${playerData.totalFish}</p>
-        <p>Best Catch: ${playerData.bestCatch ? playerData.bestCatch.name : 'None'}</p>
+        <p>Best Catch: ${playerData.bestCatch ? playerData.bestCatch.fish : 'None'}</p>
     `;
     
-    // Save game data and update leaderboard
-    saveGameData();
-    updateLeaderboard();
+    // Load leaderboard
+    loadLeaderboard();
 }
 
 function updateShop() {
     const shopContent = document.getElementById('shopContent');
     
-    // Rod upgrade
-    const rodUpgradeCost = SHOP_ITEMS.rod_upgrade.getCost(playerData.rodLevel);
-    const canUpgradeRod = playerData.tokens >= rodUpgradeCost && playerData.rodLevel < 4;
+    // Rod prices
+    const rodPrices = { bamboo: 0, platinum: 50, adamantite: 150, mythic: 500 };
+    const rodNames = ['bamboo', 'platinum', 'adamantite', 'mythic'];
+    const currentRod = rodNames[playerData.rodLevel - 1] || 'bamboo';
+    
+    let shopHTML = '';
+    
+    // Available rods to buy
+    rodNames.forEach((rod, index) => {
+        if (index >= playerData.rodLevel) {
+            const price = rodPrices[rod];
+            const canBuy = playerData.tokens >= price;
+            shopHTML += `
+                <div class="shop-item">
+                    <span>${rod.charAt(0).toUpperCase() + rod.slice(1)} Rod - ${price} tokens</span>
+                    <button onclick="buyRod('${rod}')" ${!canBuy ? 'disabled' : ''}>
+                        ${canBuy ? 'Buy' : 'Need ' + price}
+                    </button>
+                </div>
+            `;
+        }
+    });
     
     // Bait
-    const canBuyBait = playerData.tokens >= SHOP_ITEMS.bait.cost;
+    const baitPrices = { worm: 10, shrimp: 20, magic_lure: 50, golden_bait: 100 };
+    const canBuyWorm = playerData.tokens >= baitPrices.worm;
     
-    shopContent.innerHTML = `
+    shopHTML += `
         <div class="shop-item">
-            <div>
-                <strong>🎣 Rod Upgrade Lv${playerData.rodLevel}→${playerData.rodLevel + 1}</strong><br>
-                <small>${rodUpgradeCost} tokens</small>
-            </div>
-            <button onclick="upgradeRod()" ${!canUpgradeRod ? 'disabled' : ''}>
-                ${canUpgradeRod ? 'Upgrade' : 'Insufficient'}
-            </button>
-        </div>
-        
-        <div class="shop-item">
-            <div>
-                <strong>🪱 Bait (3x)</strong><br>
-                <small>${SHOP_ITEMS.bait.cost} tokens (+1 token bonus)</small>
-            </div>
-            <button onclick="buyBait()" ${!canBuyBait ? 'disabled' : ''}>
-                ${canBuyBait ? 'Buy' : 'Insufficient'}
+            <span>Worm Bait - 10 tokens</span>
+            <button onclick="buyBait('worm')" ${!canBuyWorm ? 'disabled' : ''}>
+                ${canBuyWorm ? 'Buy' : 'Need 10'}
             </button>
         </div>
     `;
+    
+    shopContent.innerHTML = shopHTML || '<p>Nothing to buy!</p>';
 }
 
-// 🎣 CAST LINE
-function castLine() {
-    if (playerData.bait > 0) {
-        playerData.bait--;
-        updateStats();
+// 🎣 CAST LINE (GENLAYER CONTRACT)
+async function castLine() {
+    if (!userAddress) {
+        showStatus('Connect wallet first', 'error');
+        return;
     }
     
     castBtn.disabled = true;
     castBtn.textContent = '🎣 Fishing...';
     
     const fishResult = document.getElementById('fishResult');
-    fishResult.innerHTML = '<p>🎣 Fishing... Wait for a bite!</p>';
+    fishResult.innerHTML = `
+        <p>🎣 Casting line...</p>
+        <p><small>Calling GenLayer contract with Web Fetching...</small></p>
+    `;
     
-    // Simulate fishing time (2-4 seconds)
-    const fishingTime = 2000 + Math.random() * 2000;
-    
-    setTimeout(() => {
-        const caughtFish = catchFish();
-        displayFish(caughtFish);
+    try {
+        // Call contract cast() - triggers web weather + LLM story
+        await sendTransaction('cast', []);
         
-        // Add tokens
-        const tokenBonus = playerData.bait > 0 ? 1 : 0;
-        const totalTokens = caughtFish.tokens + tokenBonus;
-        playerData.tokens += totalTokens;
+        // Wait for GenLayer consensus (LLM + web fetch take time)
+        fishResult.innerHTML = `
+            <p>⏳ Waiting for validators...</p>
+            <p><small>Fetching real weather + AI story generation...</small></p>
+        `;
+        await new Promise(resolve => setTimeout(resolve, 15000));
         
-        // Update stats
-        playerData.totalFish++;
-        if (!playerData.bestCatch || caughtFish.tokens > playerData.bestCatch.tokens) {
-            playerData.bestCatch = caughtFish;
+        // Reload data from contract
+        fishResult.innerHTML = '<p>📡 Loading results...</p>';
+        await loadPlayerData(0);
+        
+        // Get the recent catch
+        const recentCatch = playerData.bestCatch;
+        
+        if (!recentCatch || recentCatch.fish === 'empty') {
+            fishResult.innerHTML = `
+                <div class="fish-emoji">💨</div>
+                <h3>Missed!</h3>
+                <p>The fish got away... Try again!</p>
+            `;
+        } else {
+            // Get AI story for rare/legendary fish
+            let storyHTML = '';
+            if (recentCatch.rarity === 'rare' || recentCatch.rarity === 'legendary') {
+                try {
+                    const weather = recentCatch.weather || 'sunny';
+                    const aiStory = await genCall('get_catch_story("' + recentCatch.fish + '","' + recentCatch.rarity + '","' + weather + '")', []);
+                    if (aiStory) {
+                        storyHTML = `<p style="font-style: italic; color: #00cfff; margin-top: 10px;">"${aiStory}"</p>`;
+                    }
+                } catch (e) {
+                    console.log('Story generation failed:', e);
+                }
+            }
+            
+            const rarityColors = {
+                'common': '#aaa',
+                'uncommon': '#4caf50',
+                'rare': '#2196f3',
+                'legendary': '#ff9800'
+            };
+            const rarityColor = rarityColors[recentCatch.rarity] || '#333';
+            
+            fishResult.innerHTML = `
+                <div class="fish-emoji">🐟</div>
+                <h3 style="color: ${rarityColor};">${recentCatch.fish}</h3>
+                <p><strong>Rarity:</strong> <span style="color: ${rarityColor};">${recentCatch.rarity.toUpperCase()}</span></p>
+                <p><strong>+${recentCatch.points} tokens</strong></p>
+                ${storyHTML}
+                <p><small>Powered by GenLayer LLM & Web Fetching</small></p>
+            `;
+            
+            updateStats();
+            updateShop();
+            await loadLeaderboard();
+            
+            showStatus(`Caught ${recentCatch.fish}! +${recentCatch.points} tokens`, 'success');
         }
         
-        // Update UI
-        updateStats();
-        updateShop();
-        
-        // Reset button
         castBtn.disabled = false;
         castBtn.textContent = '🎣 Cast Line';
         
-        showStatus(`Caught ${caughtFish.name}! +${totalTokens} tokens`, 'success');
-    }, fishingTime);
-}
-
-function catchFish() {
-    // Drop rates based on rod level
-    const dropRates = {
-        common: 0.6 - (playerData.rodLevel * 0.05), // Better rods catch fewer common fish
-        rare: 0.25 + (playerData.rodLevel * 0.03),
-        epic: 0.1 + (playerData.rodLevel * 0.02),
-        legendary: 0.05 + (playerData.rodLevel * 0.01)
-    };
-    
-    // Normalize drop rates
-    const total = Object.values(dropRates).reduce((a, b) => a + b, 0);
-    Object.keys(dropRates).forEach(key => {
-        dropRates[key] = dropRates[key] / total;
-    });
-    
-    // Select rarity
-    const random = Math.random();
-    let cumulative = 0;
-    let selectedRarity = 'common';
-    
-    for (const [rarity, rate] of Object.entries(dropRates)) {
-        cumulative += rate;
-        if (random <= cumulative) {
-            selectedRarity = rarity;
-            break;
-        }
+    } catch (e) {
+        castBtn.disabled = false;
+        castBtn.textContent = '🎣 Cast Line';
+        showStatus('Fishing failed: ' + e.message, 'error');
+        console.error('Cast error:', e);
     }
-    
-    // Select fish from rarity
-    const fishOfRarity = Object.entries(FISH_TYPES).filter(([_, fish]) => fish.rarity === selectedRarity);
-    const selectedFish = fishOfRarity[Math.floor(Math.random() * fishOfRarity.length)][1];
-    
-    return selectedFish;
 }
 
-function displayFish(fish) {
-    const fishResult = document.getElementById('fishResult');
-    fishResult.innerHTML = `
-        <div class="fish-emoji">${fish.emoji}</div>
-        <h3>${fish.name}</h3>
-        <p>Rarity: ${fish.rarity}</p>
-        <p>Tokens: +${fish.tokens}</p>
-        ${playerData.bait > 0 ? '<p>🪱 Bait Bonus: +1 token</p>' : ''}
-    `;
+// 🛒 SHOP ACTIONS (GENLAYER CONTRACT)
+async function buyRod(rodName) {
+    try {
+        await sendTransaction('buy_rod', [`"${rodName}"`]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateShop();
+        showStatus(`Bought ${rodName} rod!`, 'success');
+    } catch (e) {
+        showStatus('Purchase failed: ' + e.message, 'error');
+    }
 }
 
-// 🛒 SHOP ACTIONS
+async function buyBait(baitName) {
+    try {
+        await sendTransaction('buy_bait', [`"${baitName}"`]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateShop();
+        showStatus(`Bought ${baitName}!`, 'success');
+    } catch (e) {
+        showStatus('Purchase failed: ' + e.message, 'error');
+    }
+}
+
+async function equipRod(rodName) {
+    try {
+        await sendTransaction('equip_rod', [`"${rodName}"`]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateShop();
+        showStatus(`Equipped ${rodName}!`, 'success');
+    } catch (e) {
+        showStatus('Equip failed: ' + e.message, 'error');
+    }
+}
+
+// Legacy functions for compatibility
 function upgradeRod() {
-    const cost = SHOP_ITEMS.rod_upgrade.getCost(playerData.rodLevel);
-    
-    if (playerData.tokens >= cost && playerData.rodLevel < 4) {
-        playerData.tokens -= cost;
-        playerData.rodLevel++;
-        
-        updateStats();
-        updateShop();
-        showStatus(`Rod upgraded to Level ${playerData.rodLevel}!`, 'success');
+    const rodNames = ['bamboo', 'platinum', 'adamantite', 'mythic'];
+    const nextRod = rodNames[playerData.rodLevel];
+    if (nextRod) {
+        buyRod(nextRod);
     }
 }
 
-function buyBait() {
-    const cost = SHOP_ITEMS.bait.cost;
-    
-    if (playerData.tokens >= cost) {
-        playerData.tokens -= cost;
-        playerData.bait += 3;
-        
-        updateStats();
-        updateShop();
-        showStatus('Bought 3 bait! +1 token bonus per catch', 'success');
-    }
+function buyBaitLegacy() {
+    buyBait('worm');
 }
 
-// EVENTS
-walletBtn.addEventListener('click', connectWallet);
-startBtn.addEventListener('click', startGame);
-
-// PAGE LOAD - Initialize game
+// EVENTS - Wait for DOM to be ready
 window.addEventListener('load', () => {
+    // Get DOM elements
+    const walletBtn = document.getElementById('walletBtn');
+    const startBtn = document.getElementById('startBtn');
+    
+    if (walletBtn) {
+        walletBtn.addEventListener('click', connectWallet);
+    }
+    if (startBtn) {
+        startBtn.addEventListener('click', startGame);
+    }
+    
+    // PAGE LOAD - Initialize game
     console.log('Page loaded, initializing game...');
+    console.log('DeepChain Fishing - GenLayer Integration');
+    console.log('Contract:', CONTRACT_ADDRESS);
     
     // 🔥 PASTIKAN REGISTER BACKGROUND (tidak fishing background)
     document.body.classList.remove('fishing-active');
     
-    // Load saved game data
-    loadGameData();
-    
-    // Render leaderboard immediately (tapi hidden)
-    renderLeaderboard();
+    // Load leaderboard from contract
+    loadLeaderboard();
     
     // Check wallet connection
     if (window.ethereum) {
@@ -951,6 +1239,19 @@ window.addEventListener('load', () => {
         showStatus('MetaMask not found. Please install MetaMask extension.', 'error');
     }
 });
+
+// ============================================
+// GLOBAL EXPOSE (untuk ES module compatibility)
+// ============================================
+window.connectWallet = connectWallet;
+window.startGame = startGame;
+window.showFishingScreen = showFishingScreen;
+window.registerPlayer = registerPlayer;
+window.castLine = castLine;
+window.updateStats = updateStats;
+window.buyRod = buyRod;
+window.buyBait = buyBait;
+window.equipRod = equipRod;
 </script>
 
 </body>
