@@ -32,34 +32,6 @@ BAITS = {
     "golden_bait": {"price":100,"catch":60,"rare":40}
 }
 
-def pick(seed, catch, rare, legendary):
-    roll = seed % 100
-
-    empty = max(0, 30 - catch)
-    legendary_chance = 2 + legendary
-    rare_chance = 15 + rare
-    uncommon_chance = 25
-
-    if roll < empty:
-        return "empty","empty",0
-
-    elif roll < empty + legendary_chance:
-        fish = FISH_BY_RARITY["legendary"][seed % len(FISH_BY_RARITY["legendary"])]
-        return fish,"legendary",FISH_POINTS[fish]
-
-    elif roll < empty + legendary_chance + rare_chance:
-        fish = FISH_BY_RARITY["rare"][seed % len(FISH_BY_RARITY["rare"])]
-        return fish,"rare",FISH_POINTS[fish]
-
-    elif roll < empty + legendary_chance + rare_chance + uncommon_chance:
-        fish = FISH_BY_RARITY["uncommon"][seed % len(FISH_BY_RARITY["uncommon"])]
-        return fish,"uncommon",FISH_POINTS[fish]
-
-    else:
-        fish = FISH_BY_RARITY["common"][seed % len(FISH_BY_RARITY["common"])]
-        return fish,"common",FISH_POINTS[fish]
-
-
 class FishingGame(gl.Contract):
 
     players: TreeMap[str,str]
@@ -67,6 +39,7 @@ class FishingGame(gl.Contract):
     name_map: TreeMap[str,str]
     leaderboard: TreeMap[str,str]
     counter: bigint
+    weather_cache: TreeMap[str,str]  # Cache untuk data cuaca
 
     def __init__(self):
         self.players = TreeMap()
@@ -74,8 +47,22 @@ class FishingGame(gl.Contract):
         self.name_map = TreeMap()
         self.leaderboard = TreeMap()
         self.counter = bigint(0)
+        self.weather_cache = TreeMap()
 
-    def _get(self,a):
+    def _normalize_addr(self, a: str) -> str:
+        """Normalize wallet address to lowercase for consistent storage
+        
+        Args:
+            a: Wallet address (e.g., "0xAbC123..." or "0xabc123...")
+        
+        Returns:
+            Lowercase address string (e.g., "0xabc123...")
+        """
+        return str(a).lower()
+
+    def _get(self, a: str):
+        # a = player wallet address (e.g., "0x1234...")
+        a = self._normalize_addr(a)
         if a not in self.players:
             return {
                 "balance":100,
@@ -84,18 +71,68 @@ class FishingGame(gl.Contract):
                 "bait":"none",
                 "inventory":{"rods":["bamboo"],"baits":[]},
                 "catches":[],
-                "total_casts":0
+                "total_casts":0,
+                "fishing_stories":[]
             }
         return json.loads(self.players[a])
 
-    def _save(self,a,p):
+    def _save(self, a: str, p: dict):
+        # a = player wallet address (e.g., "0x1234...")
+        a = self._normalize_addr(a)
         self.players[a]=json.dumps(p)
         self.leaderboard[a]=str(p["total_earned"])
+
+    # ── LLM INTEGRATION: Generate Story (View Method Only) ──
+    @gl.public.view
+    def get_catch_story(self, fish: str, rarity: str, weather: str) -> str:
+        """Generate AI-powered fishing story using LLM
+        
+        Args:
+            fish: Fish name (e.g., "Tuna", "Swordfish")
+            rarity: Rarity level (e.g., "common", "rare", "legendary")
+            weather: Weather condition (e.g., "sunny", "rainy")
+        """
+        prompt = "Create an exciting 2-sentence fishing story. A player caught a " + rarity + " " + fish + " in " + weather + " weather. Make it immersive and fun."
+        
+        try:
+            story = gl.ask(prompt, model="openai/gpt-4o-mini")
+            return story if story else self._fallback_story(fish, rarity, weather)
+        except:
+            return self._fallback_story(fish, rarity, weather)
+    
+    def _fallback_story(self, fish:str, rarity:str, weather:str) -> str:
+        if rarity == "legendary":
+            return "An incredible catch! The legendary " + fish + " put up an epic fight before surrendering to your skill."
+        elif rarity == "rare":
+            return "A rare beauty! The " + fish + " shimmered as you pulled it from the " + weather + " waters."
+        return "You caught a " + fish + "! Great catch!"
+
+    # ── WEB FETCHING: Get Real Weather Data ──
+    def _get_fishing_conditions(self) -> dict:
+        try:
+            # Fetch real weather data (using a public API)
+            response = gl.get_web("https://api.open-meteo.com/v1/forecast?latitude=-6.2088&longitude=106.8456&current_weather=true")
+            weather_data = json.loads(response)
+            
+            temp = weather_data.get("current_weather", {}).get("temperature", 25)
+            condition = "sunny" if temp > 25 else "cloudy" if temp > 20 else "rainy"
+            
+            # Better weather = better fishing bonus
+            fishing_bonus = 10 if condition == "sunny" else 5 if condition == "cloudy" else 0
+            
+            return {
+                "condition": condition,
+                "temperature": temp,
+                "fishing_bonus": fishing_bonus
+            }
+        except:
+            # Fallback if web fetch fails (Equivalence Principle handles this)
+            return {"condition": "unknown", "temperature": 25, "fishing_bonus": 5}
 
     # ── REGISTER / RENAME ──
     @gl.public.write
     def register(self,name:str):
-        a=str(gl.message.sender_address)
+        a=self._normalize_addr(gl.message.sender_address)
 
         if name in self.name_map:
             assert self.name_map[name]==a,"Name taken"
@@ -115,26 +152,61 @@ class FishingGame(gl.Contract):
     def set_name(self,name:str):
         self.register(name)
 
-    # ── GAME ──
+    # ── GAME with LLM & Web Integration ──
     @gl.public.write
     def cast(self):
-        a=str(gl.message.sender_address)
+        a=self._normalize_addr(gl.message.sender_address)
         p=self._get(a)
+        player_name = self.names.get(a, "Unknown")
 
         rod=RODS[p["rod"]]
         bait=BAITS[p["bait"]]
 
-        seed=int(self.counter)+sum(ord(c) for c in a)
+        # WEB FETCHING: Get real-time fishing conditions
+        conditions = self._get_fishing_conditions()
+        weather_bonus = conditions["fishing_bonus"]
+
+        seed=int(self.counter)+sum(ord(c) for c in a)+int(conditions["temperature"])
         self.counter=bigint(int(self.counter)+1)
 
-        fish,rarity,pts = pick(seed,bait["catch"],rod["rare"]+bait["rare"],rod["legendary"])
+        # Modified drop rates based on real weather
+        empty_chance = max(0, 30 - bait["catch"] - weather_bonus)
+        legendary_chance = 2 + rod["legendary"]
+        rare_chance = 15 + rod["rare"] + bait["rare"]
+        uncommon_chance = 25
+
+        roll = seed % 100
+
+        if roll < empty_chance:
+            fish,rarity,pts = "empty","empty",0
+        elif roll < empty_chance + legendary_chance:
+            fish = FISH_BY_RARITY["legendary"][seed % len(FISH_BY_RARITY["legendary"])]
+            rarity,pts = "legendary",FISH_POINTS[fish]
+        elif roll < empty_chance + legendary_chance + rare_chance:
+            fish = FISH_BY_RARITY["rare"][seed % len(FISH_BY_RARITY["rare"])]
+            rarity,pts = "rare",FISH_POINTS[fish]
+        elif roll < empty_chance + legendary_chance + rare_chance + uncommon_chance:
+            fish = FISH_BY_RARITY["uncommon"][seed % len(FISH_BY_RARITY["uncommon"])]
+            rarity,pts = "uncommon",FISH_POINTS[fish]
+        else:
+            fish = FISH_BY_RARITY["common"][seed % len(FISH_BY_RARITY["common"])]
+            rarity,pts = "common",FISH_POINTS[fish]
 
         if p["bait"]!="none":
             p["bait"]="none"
 
+        # Store catch data - story generated separately via LLM view method
+        story = ""
+        message = "Missed..."
+        
         if fish!="empty":
             p["balance"]+=pts
             p["total_earned"]+=pts
+            p["total_fish"]=p.get("total_fish",0)+1
+            message = "You caught a " + fish + "!"
+            # Story placeholder - call get_catch_story view method for LLM-generated story
+            if rarity in ["rare", "legendary"]:
+                story = "[Call get_catch_story for AI story]"
 
         p["total_casts"]+=1
 
@@ -142,12 +214,15 @@ class FishingGame(gl.Contract):
         if len(c)>=10:
             c=c[-9:]
 
-        c.append({
+        catch_record = {
             "fish":fish,
             "rarity":rarity,
             "points":pts,
-            "message":"You caught "+fish if fish!="empty" else "Missed..."
-        })
+            "message":message,
+            "weather":conditions["condition"],
+            "story":story
+        }
+        c.append(catch_record)
 
         p["catches"]=c
         self._save(a,p)
@@ -155,7 +230,7 @@ class FishingGame(gl.Contract):
     # ── SHOP ──
     @gl.public.write
     def buy_rod(self,r:str):
-        a=str(gl.message.sender_address)
+        a=self._normalize_addr(gl.message.sender_address)
         p=self._get(a)
 
         assert r in RODS
@@ -171,7 +246,7 @@ class FishingGame(gl.Contract):
 
     @gl.public.write
     def buy_bait(self,b:str):
-        a=str(gl.message.sender_address)
+        a=self._normalize_addr(gl.message.sender_address)
         p=self._get(a)
 
         assert b in BAITS and b!="none"
@@ -186,7 +261,7 @@ class FishingGame(gl.Contract):
 
     @gl.public.write
     def equip_rod(self,r:str):
-        a=str(gl.message.sender_address)
+        a=self._normalize_addr(gl.message.sender_address)
         p=self._get(a)
 
         assert r in p["inventory"]["rods"]
@@ -194,13 +269,126 @@ class FishingGame(gl.Contract):
         p["rod"]=r
         self._save(a,p)
 
+    # ── LLM FEATURE: Analyze Player Performance ──
+    @gl.public.view
+    def analyze_player(self, a: str):
+        """Analyze player performance (static analysis)
+        
+        Args:
+            a: Player wallet address (e.g., "0x1234...")
+        """
+        try:
+            original_a = a
+            a=self._normalize_addr(a)
+            exists = a in self.players
+            p=self._get(a)
+            name=self.names.get(a,"Unknown")
+            
+            catches = p.get("catches",[])
+            
+            # Debug info
+            debug_info = {
+                "original_input": original_a,
+                "normalized": a,
+                "exists_in_players": exists,
+                "player_name_from_names": name,
+                "catches_count": len(catches)
+            }
+            
+            if len(catches) == 0:
+                return json.dumps({
+                    "debug": debug_info,
+                    "analysis": "No fishing data yet. Start casting!",
+                    "player_data": p
+                })
+            
+            # Calculate stats
+            total_catches = len([c for c in catches if c["fish"]!="empty"])
+            rare_catches = len([c for c in catches if c["rarity"] in ["rare","legendary"]])
+            
+            # Static analysis (no LLM to avoid errors)
+            if rare_catches > 5:
+                analysis = "Amazing angler! You have caught " + str(rare_catches) + " rare fish. Keep up the great work!"
+            elif total_catches > 20:
+                analysis = "Great progress! " + str(total_catches) + " successful catches shows dedication. Try upgrading your rod for better results."
+            else:
+                analysis = "Keep fishing! Practice makes perfect. You have " + str(total_catches) + " catches so far."
+            
+            return json.dumps({
+                "debug": debug_info,
+                "name":name,
+                "analysis":analysis,
+                "stats":{
+                    "total_casts":p["total_casts"],
+                    "successful_catches":total_catches,
+                    "rare_catches":rare_catches,
+                    "balance":p["balance"]
+                }
+            })
+        except Exception as e:
+            return json.dumps({"error": str(e), "input_address": a})
+
+    # ── LLM FEATURE: AI-Powered Player Analysis (View Method) ──
+    @gl.public.view
+    def get_player_analysis_llm(self, a: str) -> str:
+        """Generate AI-powered player analysis using LLM (GenLayer Feature)
+        
+        Args:
+            a: Player wallet address (e.g., "0x1234...")
+        """
+        a = self._normalize_addr(a)
+        p = self._get(a)
+        name = self.names.get(a, "Unknown")
+        
+        catches = p.get("catches", [])
+        if len(catches) == 0:
+            return json.dumps({"name": name, "analysis": "No fishing data yet. Start casting!"})
+        
+        total_catches = len([c for c in catches if c["fish"] != "empty"])
+        rare_catches = len([c for c in catches if c["rarity"] in ["rare", "legendary"]])
+        
+        # LLM Integration: Generate personalized analysis
+        prompt = "Analyze this fishing performance for player " + name + ": " + str(total_catches) + " successful catches, " + str(rare_catches) + " rare/legendary, " + str(p['total_casts']) + " total casts, balance: " + str(p['balance']) + " tokens. Give encouraging 2-sentence advice."
+        
+        try:
+            analysis = gl.ask(prompt, model="openai/gpt-4o-mini")
+            if not analysis:
+                analysis = "Great fishing journey! Keep casting to improve your skills."
+        except:
+            analysis = "Great fishing journey! Keep casting to improve your skills."
+        
+        return json.dumps({
+            "name": name,
+            "llm_analysis": analysis,
+            "stats": {
+                "total_casts": p["total_casts"],
+                "successful_catches": total_catches,
+                "rare_catches": rare_catches,
+                "balance": p["balance"]
+            }
+        })
+
     # ── VIEW ──
     @gl.public.view
-    def get_stats(self,a:str):
+    def get_stats(self, a: str):
+        """Get player statistics
+        
+        Args:
+            a: Player wallet address (e.g., "0x1234...")
+        """
+        original_a = a
+        a=self._normalize_addr(a)
+        exists = a in self.players
         p=self._get(a)
         name=self.names.get(a,"Unknown")
 
         return json.dumps({
+            "debug":{
+                "original_input":original_a,
+                "normalized":a,
+                "exists_in_players":exists,
+                "player_count":len(self.players)
+            },
             "name":name,
             "balance":p["balance"],
             "total_earned":p["total_earned"],
@@ -223,3 +411,46 @@ class FishingGame(gl.Contract):
 
         arr.sort(key=lambda x:x["points"],reverse=True)
         return json.dumps(arr[:10])
+
+    @gl.public.view
+    def get_current_weather(self):
+        conditions = self._get_fishing_conditions()
+        return json.dumps(conditions)
+
+    # ── DEBUG ──
+    @gl.public.view
+    def debug_check_player(self, a: str):
+        """Debug method to check player storage status
+        
+        Args:
+            a: Player wallet address (e.g., "0x1234...")
+        """
+        a = self._normalize_addr(a)
+        exists = a in self.players
+        has_name = a in self.names
+        
+        if exists:
+            raw_data = self.players[a]
+            return json.dumps({
+                "address_normalized": a,
+                "exists_in_players": exists,
+                "has_name_registered": has_name,
+                "raw_data": raw_data,
+                "parsed": json.loads(raw_data)
+            })
+        else:
+            return json.dumps({
+                "address_normalized": a,
+                "exists_in_players": exists,
+                "has_name_registered": has_name,
+                "message": "Player not found in storage"
+            })
+
+    @gl.public.view  
+    def debug_list_registered(self):
+        """List all registered addresses"""
+        addresses = []
+        for addr in self.players:
+            name = self.names.get(addr, "Unknown")
+            addresses.append({"address": addr, "name": name})
+        return json.dumps(addresses)
