@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="logo.ico">
+<meta charset="UTF-8">
+<title>Deepchain Fishing</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+/* BACKGROUND */
+body {
+    background: url('banner.png') no-repeat center center;
+    background-size: cover;
+}
+
+/* FISHING GAME BACKGROUND (hanya saat game aktif) */
+body.fishing-active {
+    background: linear-gradient(to bottom, #87CEEB 0%, #1e3c72 50%, #0a1929 100%);
+    background-attachment: fixed;
+}
+
+/* OCEAN WAVES (hidden saat register) */
+.ocean-waves {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(to bottom, rgba(30,60,114,0.3), rgba(10,25,41,0.8));
+    overflow: hidden;
+    display: none; /* Hidden saat register */
+}
+
+/* Show ocean waves saat fishing active */
+body.fishing-active .ocean-waves {
+    display: block;
+}
+
+.wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: 100px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,60 C150,90 350,30 600,60 C850,90 1050,30 1200,60 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/></svg>') repeat-x;
+    animation: wave 8s linear infinite;
+}
+
+.wave:nth-child(2) {
+    bottom: 10px;
+    animation: wave 12s linear infinite reverse;
+    opacity: 0.5;
+}
+
+.wave:nth-child(3) {
+    bottom: 20px;
+    animation: wave 16s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes wave {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* CLOUDS (hidden saat register) */
+.clouds {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+    display: none; /* Hidden saat register */
+}
+
+/* Show clouds saat fishing active */
+body.fishing-active .clouds {
+    display: block;
+}
+
+.cloud {
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+    opacity: 0.7;
+}
+
+.cloud::before,
+.cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+}
+
+.cloud1 {
+    width: 100px;
+    height: 40px;
+    top: 20px;
+    left: 20%;
+    animation: float 20s infinite;
+}
+
+.cloud1::before {
+    width: 50px;
+    height: 50px;
+    top: -25px;
+    left: 10px;
+}
+
+.cloud1::after {
+    width: 60px;
+    height: 40px;
+    top: -15px;
+    right: 10px;
+}
+
+.cloud2 {
+    width: 80px;
+    height: 35px;
+    top: 60px;
+    left: 60%;
+    animation: float 25s infinite;
+}
+
+.cloud2::before {
+    width: 40px;
+    height: 40px;
+    top: -20px;
+    left: 15px;
+}
+
+.cloud2::after {
+    width: 50px;
+    height: 35px;
+    top: -10px;
+    right: 15px;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(20px) translateY(-10px); }
+    50% { transform: translateX(-10px) translateY(5px); }
+    75% { transform: translateX(15px) translateY(-5px); }
+}
+
+/* OVERLAY */
+.overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.25);
+    top: 0;
+    left: 0;
+}
+
+/* CONNECT BUTTON */
+#walletBtn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10;
+}
+
+/* 🎯 MAIN BOX (INI KUNCI NYA) */
+.center-box {
+    position: absolute;
+    top: 76%; /* 🔥 posisi turun dari tengah */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    background: rgba(0,0,0,0.65);
+    padding: 30px;
+    border-radius: 18px;
+    text-align: center;
+    width: 340px;
+    z-index: 5;
+
+    backdrop-filter: blur(10px);
+}
+
+/* TITLE */
+.center-box h2 {
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    margin-top: 10px;
+    font-size: 15px;
+}
+
+/* BUTTON */
+button {
+    margin-top: 15px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* GAME UI */
+#gameUI {
+    display: none;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.85);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+/* LEADERBOARD (hidden saat register) */
+#leaderboard {
+    position: absolute;
+    top: 70px;
+    left: 20px;
+    width: 280px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 12px;
+    padding: 15px;
+    color: white;
+    z-index: 15;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: none; /* Hidden saat register */
+}
+
+/* Show leaderboard saat fishing active */
+body.fishing-active #leaderboard {
+    display: block;
+}
+
+#leaderboard h3 {
+    margin-top: 0;
+    color: #00cfff;
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.leaderboard-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    margin: 5px 0;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border-left: 3px solid #00cfff;
+}
+
+.leaderboard-item.current-player {
+    background: rgba(0,255,255,0.1);
+    border-left-color: #ff6b6b;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: #00cfff;
+    margin-right: 10px;
+    min-width: 25px;
+}
+
+.leaderboard-name {
+    flex: 1;
+    font-size: 14px;
+}
+
+.leaderboard-tokens {
+    font-weight: bold;
+    color: #ff6b6b;
+    font-size: 14px;
+}
+
+.leaderboard-rank.gold { color: #ffd700; }
+.leaderboard-rank.silver { color: #c0c0c0; }
+.leaderboard-rank.bronze { color: #cd7f32; }
+
+/* FISHING GAME SCREEN */
+#fishingScreen {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 20;
+}
+
+#fishingHeader {
+    background: rgba(0,0,0,0.3);
+    padding: 15px;
+    text-align: center;
+    color: white;
+}
+
+#fishingContent {
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    justify-content: space-between;
+}
+
+#fishingArea {
+    flex: 1;
+    text-align: center;
+}
+
+#castBtn {
+    font-size: 24px;
+    padding: 20px 40px;
+    background: #ff6b6b;
+    border-radius: 15px;
+    margin: 20px 0;
+}
+
+#castBtn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+#fishResult {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    min-height: 100px;
+}
+
+#sidePanel {
+    width: 300px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    padding: 15px;
+}
+
+#stats, #shop {
+    margin-bottom: 20px;
+}
+
+#stats h3, #shop h3 {
+    margin-top: 0;
+    color: #00cfff;
+}
+
+.shop-item {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-item button {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.shop-item button:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+/* STATUS */
+#status {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    padding: 8px 15px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    font-size: 14px;
+    z-index: 10;
+    display: none;
+}
+
+#status.error {
+    background: #ff4444;
+    color: white;
+}
+
+#status.success {
+    background: #44ff44;
+    color: white;
+}
+
+/* FISH ANIMATION */
+@keyframes fishJump {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(10deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+.fish-emoji {
+    font-size: 48px;
+    animation: fishJump 0.5s ease-in-out;
+}
+</style>
+</head>
+
+<body>
+
+<!-- 🌊 OCEAN ENVIRONMENT -->
+<div class="clouds">
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+</div>
+
+<div class="overlay"></div>
+
+<!-- 🏆 LEADERBOARD -->
+<div id="leaderboard">
+    <h3>🏆 Leaderboard</h3>
+    <div class="leaderboard-list" id="leaderboardList">
+        <div class="leaderboard-item">
+            <span class="leaderboard-rank">1st</span>
+            <span class="leaderboard-name">Loading...</span>
+            <span class="leaderboard-tokens">0</span>
+        </div>
+    </div>
+</div>
+
+<button id="walletBtn">Connect Wallet</button>
+
+<div id="status"></div>
+
+<!-- 🎯 BOX UTAMA -->
+<div class="center-box">
+    <h2>🎣 Fishing Game</h2>
+    <input id="nicknameInput" placeholder="Enter your nickname">
+    <button id="startBtn">Start Game</button>
+</div>
+
+<div id="gameUI"></div>
+
+<!-- 🎣 FISHING GAME SCREEN -->
+<div id="fishingScreen">
+    <div id="fishingHeader">
+        <h2 id="playerName">Player Name</h2>
+        <div id="playerStats">Tokens: 0 | Rod Level: 1 | Bait: 0</div>
+    </div>
+    
+    <div id="fishingContent">
+        <div id="fishingArea">
+            <button id="castBtn" onclick="castLine()">🎣 Cast Line</button>
+            <div id="fishResult">
+                <p>Cast your line to start fishing!</p>
+            </div>
+        </div>
+        
+        <div id="sidePanel">
+            <div id="stats">
+                <h3>📊 Stats</h3>
+                <div id="statsContent">
+                    <p>Total Fish: 0</p>
+                    <p>Best Catch: None</p>
+                </div>
+            </div>
+            
+            <div id="shop">
+                <h3>🛒 Shop</h3>
+                <div id="shopContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 🌊 OCEAN WAVES -->
+<div class="ocean-waves">
+    <div class="wave"></div>
+    <div class="wave"></div>
+    <div class="wave"></div>
+</div>
+
+<script>
+// ============================================
+// GENLAYER CONFIGURATION
+// ============================================
+const STUDIONET_CHAIN_ID = "0xF22F"; // 61999 in decimal - matches deployment
+const RPC_URL = "https://studio.genlayer.com/api";
+const CONTRACT_ADDRESS = "0xD3B4a3215568AE9e449ae05E335b040C67c7Fa8c";
+
+// Mock mode untuk testing UI (set true kalau contract error)
+const MOCK_MODE = true;
+
+// ============================================
+// RPC HELPERS
+// ============================================
+function normalizeAddress(addr) {
+    if (!addr) return addr;
+    return addr.toLowerCase();
+}
+
+async function genCall(method, args = []) {
+    console.log('genCall:', method, args, 'MOCK_MODE:', MOCK_MODE);
+
+    if (MOCK_MODE) {
+        // Return mock data for testing UI
+        if (method === 'get_leaderboard') {
+            return [
+                {address: '0x1234...5678', name: 'FisherKing', points: 1250},
+                {address: '0xabcd...efgh', name: 'OceanMaster', points: 980},
+                {address: '0x9999...0000', name: 'DeepDiver', points: 750}
+            ];
+        }
+        if (method === 'get_stats') {
+            return {
+                debug: {
+                    original_input: args[0],
+                    normalized: args[0],
+                    exists_in_players: true,
+                    player_count: 1
+                },
+                name: 'TestPlayer',
+                balance: 100,
+                total_earned: 0,
+                total_casts: 0,
+                rod: 'bamboo',
+                bait: 'none',
+                inventory: {
+                    rods: ['bamboo'],
+                    baits: []
+                },
+                recent_catches: []
+            };
+        }
+        // Mock cast - return random fish
+        if (method === 'cast') {
+            const fishTypes = [
+                {fish: 'Sardine', rarity: 'common', points: 10},
+                {fish: 'Anchovy', rarity: 'common', points: 12},
+                {fish: 'Bass', rarity: 'uncommon', points: 40},
+                {fish: 'Tuna', rarity: 'rare', points: 200},
+                {fish: 'Shark', rarity: 'rare', points: 500},
+                {fish: 'Golden Koi', rarity: 'legendary', points: 1200}
+            ];
+            const randomFish = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+            return randomFish;
+        }
+        return {};
+    }
+
+    if (!userAddress) {
+        throw new Error('Wallet not connected');
+    }
+
+    // Build method string with args
+    let methodStr = method;
+    if (!method.includes('(')) {
+        if (args.length > 0) {
+            // Join args with proper quoting for strings
+            const formattedArgs = args.map(arg => {
+                // If arg looks like an address (starts with 0x), remove 0x prefix for GenLayer
+                if (typeof arg === 'string' && arg.startsWith('0x')) {
+                    return arg.slice(2); // Remove 0x prefix
+                }
+                // If arg is already quoted, use as-is
+                if (typeof arg === 'string' && (arg.startsWith('"') || arg.startsWith("'"))) {
+                    return arg;
+                }
+                // Otherwise quote it
+                return `"${arg}"`;
+            });
+            methodStr += '(' + formattedArgs.join(',') + ')';
+        } else {
+            methodStr += '()';
+        }
+    }
+
+    console.log('Method string:', methodStr);
+
+    // Encode to hex properly
+    const hexData = '0x' + Array.from(methodStr)
+        .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+        .join('');
+
+    console.log('Hex data:', hexData);
+
+    try {
+        // Use eth_call via MetaMask
+        const result = await window.ethereum.request({
+            method: 'eth_call',
+            params: [{
+                from: userAddress,
+                to: CONTRACT_ADDRESS,
+                data: hexData
+            }, 'latest']
+        });
+
+        console.log('eth_call result:', result);
+        console.log('Result type:', typeof result);
+        console.log('Result length:', result ? result.length : 0);
+
+        // Decode hex result
+        if (result && result !== '0x' && result.startsWith('0x')) {
+            try {
+                let hex = result.slice(2);
+                // Pad with leading zero if odd length
+                if (hex.length % 2 !== 0) {
+                    hex = '0' + hex;
+                }
+                let str = '';
+                for (let i = 0; i < hex.length; i += 2) {
+                    str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+                }
+                console.log('Decoded:', str);
+                try {
+                    return JSON.parse(str);
+                } catch (e) {
+                    return str;
+                }
+            } catch (e) {
+                console.error('Decode error:', e);
+                return result;
+            }
+        }
+
+        return result;
+    } catch (e) {
+        console.error('genCall error:', e);
+        if (e.data && e.data.receipt) {
+            console.error('Receipt details:', JSON.stringify(e.data.receipt, null, 2));
+            if (e.data.receipt.output) {
+                console.error('Receipt output:', e.data.receipt.output);
+            }
+        }
+        throw e;
+    }
+}
+
+// Simple hex encoding for strings
+function stringToHex(str) {
+    let hex = '';
+    for (let i = 0; i < str.length; i++) {
+        hex += str.charCodeAt(i).toString(16).padStart(2, '0');
+    }
+    return hex;
+}
+
+async function sendTransaction(method, args = []) {
+    if (!userAddress) throw new Error('Wallet not connected');
+
+    // Mock mode for testing
+    if (MOCK_MODE) {
+        showStatus('Processing transaction (mock)...', '');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        if (method === 'register') {
+            // Simulate successful registration
+            playerData.nickname = args[0].replace(/"/g, '');
+            isRegistered = true;
+            showStatus('Registration successful!', 'success');
+            return '0xmock_transaction_hash';
+        }
+
+        if (method === 'cast') {
+            // Simulate cast with random fish
+            const fishTypes = [
+                {fish: 'Sardine', rarity: 'common', points: 10, emoji: '🐟'},
+                {fish: 'Anchovy', rarity: 'common', points: 12, emoji: '🐠'},
+                {fish: 'Bass', rarity: 'uncommon', points: 40, emoji: '🐟'},
+                {fish: 'Tuna', rarity: 'rare', points: 200, emoji: '🐠'},
+                {fish: 'Shark', rarity: 'rare', points: 500, emoji: '🦈'},
+                {fish: 'Golden Koi', rarity: 'legendary', points: 1200, emoji: '👑'}
+            ];
+            const randomFish = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+
+            // Update player data
+            playerData.tokens += randomFish.points;
+            playerData.totalFish += 1;
+            playerData.bestCatch = randomFish;
+
+            showStatus('Transaction confirmed!', 'success');
+            return '0xmock_transaction_hash';
+        }
+
+        if (method === 'buy_rod' || method === 'buy_bait') {
+            showStatus('Purchase successful!', 'success');
+            return '0xmock_transaction_hash';
+        }
+
+        return '0xmock_transaction_hash';
+    }
+
+    showStatus('Processing transaction...', '');
+
+    try {
+        // Build calldata: method_name(arg1,arg2,...)
+        const calldata = method + '(' + args.join(',') + ')';
+
+        // Convert string to hex for MetaMask
+        const hexData = '0x' + Array.from(calldata)
+            .map(c => c.charCodeAt(0).toString(16).padStart(2, '0'))
+            .join('');
+
+        const txParams = {
+            from: userAddress,
+            to: CONTRACT_ADDRESS,
+            data: hexData,
+            gas: '0x186A0'
+        };
+
+        console.log('Sending transaction:', calldata);
+        console.log('Hex data:', hexData);
+
+        // Send via MetaMask - authentic GenLayer transaction
+        const result = await window.ethereum.request({
+            method: 'eth_sendTransaction',
+            params: [txParams]
+        });
+
+        showStatus('Transaction sent! Waiting for consensus...', '');
+        await new Promise(resolve => setTimeout(resolve, 15000));
+
+        showStatus('Transaction confirmed!', 'success');
+        return result;
+    } catch (error) {
+        console.error('Transaction error details:', error);
+        if (error.data && error.data.receipt) {
+            console.error('Receipt:', error.data.receipt);
+            console.error('Receipt output:', error.data.receipt.output);
+        }
+        showStatus('Transaction failed: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+// ============================================
+// FISH DATA (Matching Contract)
+// ============================================
+const FISH_TYPES = {
+    // Common
+    'small_fish': { emoji: '🐟', name: 'Small Fish', tokens: 1, rarity: 'common' },
+    'sardine': { emoji: '🐠', name: 'Sardine', tokens: 1, rarity: 'common' },
+    'anchovy': { emoji: '🐡', name: 'Anchovy', tokens: 2, rarity: 'common' },
+    
+    // Rare
+    'dolphin': { emoji: '🐬', name: 'Dolphin', tokens: 5, rarity: 'rare' },
+    'tuna': { emoji: '🐠', name: 'Tuna', tokens: 4, rarity: 'rare' },
+    'octopus': { emoji: '🐙', name: 'Octopus', tokens: 6, rarity: 'rare' },
+    
+    // Epic
+    'shark': { emoji: '🦈', name: 'Shark', tokens: 12, rarity: 'epic' },
+    'whale': { emoji: '🐋', name: 'Whale', tokens: 15, rarity: 'epic' },
+    
+    // Legendary
+    'sea_dragon': { emoji: '🐉', name: 'Sea Dragon', tokens: 30, rarity: 'legendary' },
+    'golden_fish': { emoji: '👑', name: 'Golden Fish', tokens: 25, rarity: 'legendary' }
+};
+
+// 🛒 SHOP SYSTEM
+const SHOP_ITEMS = {
+    rod_upgrade: {
+        name: 'Rod Upgrade',
+        getCost: (level) => level * 20,
+        description: 'Upgrade fishing rod (Lv1→Lv2: 20, Lv2→Lv3: 40, Lv3→Lv4: 80)',
+        action: 'upgradeRod'
+    },
+    bait: {
+        name: 'Bait',
+        cost: 5,
+        description: 'Buy 3 bait (gives +1 token bonus)',
+        action: 'buyBait'
+    }
+};
+
+// STATE
+let userAddress = null;
+let isConnected = false;
+let isRegistered = false;
+let playerData = {
+    nickname: '',
+    tokens: 0,
+    rodLevel: 1,
+    bait: 0,
+    totalFish: 0,
+    bestCatch: null
+};
+
+// 🏆 LEADERBOARD SYSTEM
+let leaderboardData = [];
+
+// Load saved data from localStorage
+function loadGameData() {
+    const savedData = localStorage.getItem('fishingGameData');
+    if (savedData) {
+        const data = JSON.parse(savedData);
+        playerData = { ...playerData, ...data };
+    }
+    
+    // Load leaderboard
+    const savedLeaderboard = localStorage.getItem('fishingGameLeaderboard');
+    if (savedLeaderboard) {
+        leaderboardData = JSON.parse(savedLeaderboard);
+    }
+}
+
+// Save game data to localStorage
+function saveGameData() {
+    const dataToSave = {
+        nickname: playerData.nickname,
+        tokens: playerData.tokens,
+        rodLevel: playerData.rodLevel,
+        bait: playerData.bait,
+        totalFish: playerData.totalFish,
+        bestCatch: playerData.bestCatch
+    };
+    localStorage.setItem('fishingGameData', JSON.stringify(dataToSave));
+}
+
+// Update leaderboard
+function updateLeaderboard() {
+    if (!userAddress || !playerData.nickname) return;
+    
+    // Find existing player in leaderboard
+    const existingPlayerIndex = leaderboardData.findIndex(p => p.address === userAddress);
+    
+    const playerEntry = {
+        address: userAddress,
+        nickname: playerData.nickname,
+        tokens: playerData.tokens,
+        totalFish: playerData.totalFish,
+        lastUpdated: Date.now()
+    };
+    
+    if (existingPlayerIndex >= 0) {
+        // Update existing player
+        leaderboardData[existingPlayerIndex] = playerEntry;
+    } else {
+        // Add new player
+        leaderboardData.push(playerEntry);
+    }
+    
+    // Sort by tokens (descending)
+    leaderboardData.sort((a, b) => b.tokens - a.tokens);
+    
+    // Keep only top 50 players
+    leaderboardData = leaderboardData.slice(0, 50);
+    
+    // Save to localStorage
+    localStorage.setItem('fishingGameLeaderboard', JSON.stringify(leaderboardData));
+    
+    // Update UI
+    renderLeaderboard();
+}
+
+// Render leaderboard
+function renderLeaderboard() {
+    const leaderboardList = document.getElementById('leaderboardList');
+    
+    if (leaderboardData.length === 0) {
+        leaderboardList.innerHTML = `
+            <div class="leaderboard-item">
+                <span class="leaderboard-rank">-</span>
+                <span class="leaderboard-name">No players yet</span>
+                <span class="leaderboard-tokens">0</span>
+            </div>
+        `;
+        return;
+    }
+    
+    leaderboardList.innerHTML = leaderboardData.slice(0, 10).map((player, index) => {
+        const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+        const isCurrentPlayer = player.address === userAddress;
+        
+        return `
+            <div class="leaderboard-item ${isCurrentPlayer ? 'current-player' : ''}">
+                <span class="leaderboard-rank ${rankClass}">
+                    ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}th`}
+                </span>
+                <span class="leaderboard-name">${player.nickname}</span>
+                <span class="leaderboard-tokens">${player.tokens.toLocaleString()}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// ELEMENTS
+const walletBtn = document.getElementById('walletBtn');
+const startBtn = document.getElementById('startBtn');
+const nicknameInput = document.getElementById('nicknameInput');
+const gameUI = document.getElementById('gameUI');
+const status = document.getElementById('status');
+const fishingScreen = document.getElementById('fishingScreen');
+const castBtn = document.getElementById('castBtn');
+
+// STATUS
+function showStatus(message, type = '') {
+    status.textContent = message;
+    status.className = type;
+    status.style.display = 'block';
+    
+    if (type === 'success') {
+        setTimeout(() => status.style.display = 'none', 3000);
+    }
+}
+
+// WALLET
+async function connectWallet() {
+    if (!window.ethereum) {
+        showStatus('MetaMask not found. Please install MetaMask.', 'error');
+        return;
+    }
+    
+    try {
+        const chain = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chain !== STUDIONET_CHAIN_ID) {
+            await switchToStudioNet();
+        }
+
+        const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+        userAddress = accounts[0];
+        isConnected = true;
+
+        walletBtn.textContent = `🦊 ${userAddress.substring(0,6)}...${userAddress.slice(-4)}`;
+        walletBtn.style.background = '#44ff44';
+        
+        // Auto-load player data from contract
+        await loadPlayerData();
+        
+        showStatus('Wallet connected!', 'success');
+    } catch (e) {
+        showStatus('Connection failed: ' + e.message, 'error');
+    }
+}
+
+// LOAD PLAYER DATA FROM CONTRACT
+async function loadPlayerData(retryCount = 0) {
+    if (!userAddress) return;
+
+    const normalizedAddr = normalizeAddress(userAddress);
+    console.log('Loading stats for address:', normalizedAddr);
+
+    try {
+        const stats = await genCall('get_stats', [normalizedAddr]);
+        console.log('Stats loaded:', stats);
+        console.log('Stats name:', stats?.name);
+        console.log('Stats name type:', typeof stats?.name);
+
+        if (stats && stats.name && stats.name !== 'Unknown' && stats.name !== '') {
+            isRegistered = true;
+            playerData = {
+                nickname: stats.name,
+                tokens: stats.balance || 100,
+                rodLevel: ['bamboo', 'platinum', 'adamantite', 'mythic'].indexOf(stats.rod) + 1 || 1,
+                bait: stats.bait === 'none' ? 0 : 3,
+                totalFish: stats.recent_catches ? stats.recent_catches.filter(c => c.fish !== 'empty').length : 0,
+                bestCatch: stats.recent_catches && stats.recent_catches.length > 0
+                    ? stats.recent_catches.filter(c => c.fish !== 'empty').reduce((best, c) =>
+                        c.points > (best?.points || 0) ? c : best, null)
+                    : null
+            };
+            nicknameInput.value = playerData.nickname;
+            console.log('Player data loaded from contract:', playerData);
+            console.log('isRegistered set to: true');
+
+            // Auto-show fishing screen if registered
+            showFishingScreen();
+        } else {
+            console.log('Player not registered yet - stats:', stats);
+            isRegistered = false;
+            console.log('isRegistered set to: false');
+
+            // Show registration form
+            document.querySelector('.center-box').style.display = 'block';
+            fishingScreen.style.display = 'none';
+            document.body.classList.remove('fishing-active');
+        }
+    } catch (e) {
+        console.log('Error loading player data:', e);
+        // Player not registered - this is OK
+        isRegistered = false;
+        console.log('isRegistered set to: false (error)');
+
+        // Show registration form
+        document.querySelector('.center-box').style.display = 'block';
+        fishingScreen.style.display = 'none';
+        document.body.classList.remove('fishing-active');
+    }
+}
+
+// LOAD LEADERBOARD FROM CONTRACT
+async function loadLeaderboard() {
+    try {
+        // Pass empty array - genCall will add () automatically
+        const leaderboard = await genCall('get_leaderboard', []);
+        const listEl = document.getElementById('leaderboardList');
+        
+        if (!leaderboard || leaderboard.length === 0) {
+            listEl.innerHTML = '<p style="text-align: center; color: #999;">No players yet</p>';
+            return;
+        }
+        
+        listEl.innerHTML = leaderboard.map((player, index) => {
+            const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
+            const isCurrentPlayer = player.address === userAddress;
+            
+            return `
+                <div class="leaderboard-item ${isCurrentPlayer ? 'current-player' : ''}">
+                    <span class="leaderboard-rank ${rankClass}">
+                        ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}th`}
+                    </span>
+                    <span class="leaderboard-name">${player.name || 'Unknown'}</span>
+                    <span class="leaderboard-tokens">${player.points || 0}</span>
+                </div>
+            `;
+        }).join('');
+    } catch (e) {
+        console.log('Leaderboard error:', e.message);
+        if (e.data && e.data.receipt) {
+            console.error('Leaderboard receipt details:', JSON.stringify(e.data.receipt, null, 2));
+        }
+        // Don't show error in UI, just empty state
+        document.getElementById('leaderboardList').innerHTML = '<p style="text-align: center; color: #999;">Leaderboard loading...</p>';
+    }
+}
+
+// NETWORK
+async function switchToStudioNet() {
+    try {
+        await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: STUDIONET_CHAIN_ID }]
+        });
+    } catch (e) {
+        if (e.code === 4902) {
+            await window.ethereum.request({
+                method: "wallet_addEthereumChain",
+                params: [{
+                    chainId: STUDIONET_CHAIN_ID,
+                    chainName: "GenLayer Studio",
+                    nativeCurrency: { name: "GEN", symbol: "GEN", decimals: 18 },
+                    rpcUrls: [RPC_URL],
+                    blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
+                }]
+            });
+        }
+    }
+}
+
+// 🎣 GAME FUNCTIONS (GENLAYER INTEGRATION)
+async function startGame() {
+    const nickname = nicknameInput.value.trim();
+    
+    if (!nickname) {
+        showStatus('Enter nickname', 'error');
+        return;
+    }
+    
+    if (!isConnected) {
+        showStatus('Connect wallet first', 'error');
+        return;
+    }
+
+    try {
+        if (!isRegistered) {
+            console.log('Registering player:', nickname);
+            await sendTransaction('register', [`"${nickname}"`]);
+            await new Promise(resolve => setTimeout(resolve, 8000));
+        }
+        
+        playerData.nickname = nickname;
+        await loadPlayerData(0);
+        
+        if (playerData.nickname === 'Unknown' || !playerData.nickname) {
+            showStatus('Registration pending... Please try again', 'error');
+            return;
+        }
+        
+        showFishingScreen();
+        await loadLeaderboard();
+    } catch (e) {
+        showStatus('Registration failed: ' + e.message, 'error');
+    }
+}
+
+function showFishingScreen() {
+    document.querySelector('.center-box').style.display = 'none';
+    fishingScreen.style.display = 'block';
+    
+    // 🔥 AKTIFKAN FISHING BACKGROUND
+    document.body.classList.add('fishing-active');
+    
+    document.getElementById('playerName').textContent = `${playerData.nickname}'s Fishing Game`;
+    updateStats();
+    updateShop();
+    renderLeaderboard(); // Show leaderboard when game starts
+}
+
+function updateStats() {
+    document.getElementById('playerStats').textContent = 
+        `Tokens: ${playerData.tokens} | Rod Level: ${playerData.rodLevel} | Bait: ${playerData.bait}`;
+    
+    document.getElementById('statsContent').innerHTML = `
+        <p>Total Fish: ${playerData.totalFish}</p>
+        <p>Best Catch: ${playerData.bestCatch ? playerData.bestCatch.fish : 'None'}</p>
+    `;
+    
+    // Load leaderboard
+    loadLeaderboard();
+}
+
+function updateShop() {
+    const shopContent = document.getElementById('shopContent');
+    
+    // Rod prices
+    const rodPrices = { bamboo: 0, platinum: 50, adamantite: 150, mythic: 500 };
+    const rodNames = ['bamboo', 'platinum', 'adamantite', 'mythic'];
+    const currentRod = rodNames[playerData.rodLevel - 1] || 'bamboo';
+    
+    let shopHTML = '';
+    
+    // Available rods to buy
+    rodNames.forEach((rod, index) => {
+        if (index >= playerData.rodLevel) {
+            const price = rodPrices[rod];
+            const canBuy = playerData.tokens >= price;
+            shopHTML += `
+                <div class="shop-item">
+                    <span>${rod.charAt(0).toUpperCase() + rod.slice(1)} Rod - ${price} tokens</span>
+                    <button onclick="buyRod('${rod}')" ${!canBuy ? 'disabled' : ''}>
+                        ${canBuy ? 'Buy' : 'Need ' + price}
+                    </button>
+                </div>
+            `;
+        }
+    });
+    
+    // Bait
+    const baitPrices = { worm: 10, shrimp: 20, magic_lure: 50, golden_bait: 100 };
+    const canBuyWorm = playerData.tokens >= baitPrices.worm;
+    
+    shopHTML += `
+        <div class="shop-item">
+            <span>Worm Bait - 10 tokens</span>
+            <button onclick="buyBait('worm')" ${!canBuyWorm ? 'disabled' : ''}>
+                ${canBuyWorm ? 'Buy' : 'Need 10'}
+            </button>
+        </div>
+    `;
+    
+    shopContent.innerHTML = shopHTML || '<p>Nothing to buy!</p>';
+}
+
+// 🎣 CAST LINE (GENLAYER CONTRACT)
+async function castLine() {
+    if (!userAddress) {
+        showStatus('Connect wallet first', 'error');
+        return;
+    }
+
+    if (!isRegistered) {
+        showStatus('Please register first by starting the game!', 'error');
+        return;
+    }
+    
+    castBtn.disabled = true;
+    castBtn.textContent = '🎣 Fishing...';
+    
+    const fishResult = document.getElementById('fishResult');
+    fishResult.innerHTML = `
+        <p>🎣 Casting line...</p>
+        <p><small>Calling GenLayer contract with Web Fetching...</small></p>
+    `;
+    
+    try {
+        // Call contract cast() - triggers web weather + LLM story
+        await sendTransaction('cast', []);
+        
+        // Wait for GenLayer consensus (LLM + web fetch take time)
+        fishResult.innerHTML = `
+            <p>⏳ Waiting for validators...</p>
+            <p><small>Fetching real weather + AI story generation...</small></p>
+        `;
+        await new Promise(resolve => setTimeout(resolve, 15000));
+
+        // Reload data from contract (skip in MOCK_MODE since data is already updated)
+        fishResult.innerHTML = '<p>📡 Loading results...</p>';
+        if (!MOCK_MODE) {
+            await loadPlayerData(0);
+        }
+        
+        // Get the recent catch
+        const recentCatch = playerData.bestCatch;
+        
+        if (!recentCatch || recentCatch.fish === 'empty') {
+            fishResult.innerHTML = `
+                <div class="fish-emoji">💨</div>
+                <h3>Missed!</h3>
+                <p>The fish got away... Try again!</p>
+            `;
+        } else {
+            // Get AI story for rare/legendary fish
+            let storyHTML = '';
+            if (recentCatch.rarity === 'rare' || recentCatch.rarity === 'legendary') {
+                try {
+                    const weather = recentCatch.weather || 'sunny';
+                    const aiStory = await genCall('get_catch_story("' + recentCatch.fish + '","' + recentCatch.rarity + '","' + weather + '")', []);
+                    if (aiStory) {
+                        storyHTML = `<p style="font-style: italic; color: #00cfff; margin-top: 10px;">"${aiStory}"</p>`;
+                    }
+                } catch (e) {
+                    console.log('Story generation failed:', e);
+                }
+            }
+            
+            const rarityColors = {
+                'common': '#aaa',
+                'uncommon': '#4caf50',
+                'rare': '#2196f3',
+                'legendary': '#ff9800'
+            };
+            const rarityColor = rarityColors[recentCatch.rarity] || '#333';
+            
+            fishResult.innerHTML = `
+                <div class="fish-emoji">🐟</div>
+                <h3 style="color: ${rarityColor};">${recentCatch.fish}</h3>
+                <p><strong>Rarity:</strong> <span style="color: ${rarityColor};">${recentCatch.rarity.toUpperCase()}</span></p>
+                <p><strong>+${recentCatch.points} tokens</strong></p>
+                ${storyHTML}
+                <p><small>Powered by GenLayer LLM & Web Fetching</small></p>
+            `;
+            
+            updateStats();
+            updateShop();
+            await loadLeaderboard();
+            
+            showStatus(`Caught ${recentCatch.fish}! +${recentCatch.points} tokens`, 'success');
+        }
+        
+        castBtn.disabled = false;
+        castBtn.textContent = '🎣 Cast Line';
+        
+    } catch (e) {
+        castBtn.disabled = false;
+        castBtn.textContent = '🎣 Cast Line';
+        showStatus('Fishing failed: ' + e.message, 'error');
+        console.error('Cast error:', e);
+    }
+}
+
+// 🛒 SHOP ACTIONS (GENLAYER CONTRACT)
+async function buyRod(rodName) {
+    try {
+        await sendTransaction('buy_rod', [`"${rodName}"`]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateShop();
+        showStatus(`Bought ${rodName} rod!`, 'success');
+    } catch (e) {
+        showStatus('Purchase failed: ' + e.message, 'error');
+    }
+}
+
+async function buyBait(baitName) {
+    try {
+        await sendTransaction('buy_bait', [`"${baitName}"`]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateShop();
+        showStatus(`Bought ${baitName}!`, 'success');
+    } catch (e) {
+        showStatus('Purchase failed: ' + e.message, 'error');
+    }
+}
+
+async function equipRod(rodName) {
+    try {
+        await sendTransaction('equip_rod', [`"${rodName}"`]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateShop();
+        showStatus(`Equipped ${rodName}!`, 'success');
+    } catch (e) {
+        showStatus('Equip failed: ' + e.message, 'error');
+    }
+}
+
+// Legacy functions for compatibility
+function upgradeRod() {
+    const rodNames = ['bamboo', 'platinum', 'adamantite', 'mythic'];
+    const nextRod = rodNames[playerData.rodLevel];
+    if (nextRod) {
+        buyRod(nextRod);
+    }
+}
+
+function buyBaitLegacy() {
+    buyBait('worm');
+}
+
+// EVENTS - Wait for DOM to be ready
+window.addEventListener('load', () => {
+    // Get DOM elements
+    const walletBtn = document.getElementById('walletBtn');
+    const startBtn = document.getElementById('startBtn');
+    
+    if (walletBtn) {
+        walletBtn.addEventListener('click', connectWallet);
+    }
+    if (startBtn) {
+        startBtn.addEventListener('click', startGame);
+    }
+    
+    // PAGE LOAD - Initialize game
+    console.log('Page loaded, initializing game...');
+    console.log('DeepChain Fishing - GenLayer Integration');
+    console.log('Contract:', CONTRACT_ADDRESS);
+    
+    // 🔥 PASTIKAN REGISTER BACKGROUND (tidak fishing background)
+    document.body.classList.remove('fishing-active');
+    
+    // Load leaderboard from contract
+    loadLeaderboard();
+    
+    // Check wallet connection
+    if (window.ethereum) {
+        console.log('MetaMask detected');
+        window.ethereum.request({ method: 'eth_accounts' }).then(accounts => {
+            if (accounts.length > 0) {
+                console.log('MetaMask is unlocked but waiting for manual connection');
+            }
+        });
+    } else {
+        console.log('MetaMask not detected');
+        showStatus('MetaMask not found. Please install MetaMask extension.', 'error');
+    }
+});
+
+// ============================================
+// GLOBAL EXPOSE (untuk ES module compatibility)
+// ============================================
+window.connectWallet = connectWallet;
+window.startGame = startGame;
+window.showFishingScreen = showFishingScreen;
+window.registerPlayer = registerPlayer;
+window.castLine = castLine;
+window.updateStats = updateStats;
+window.buyRod = buyRod;
+window.buyBait = buyBait;
+window.equipRod = equipRod;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepChain Fishing - GenLayer Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Clouds -->
+    <div class="clouds">
+        <div class="cloud cloud1"></div>
+        <div class="cloud cloud2"></div>
+    </div>
+
+    <!-- Overlay -->
+    <div class="overlay"></div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🎣 DeepChain Fishing</h1>
+        <p>Powered by GenLayer LLM & Web Fetching</p>
+    </div>
+    <div id="walletSection">
+        <button id="connectWalletBtn">Connect Wallet</button>
+        <button id="disconnectWalletBtn">Disconnect</button>
+        <span id="walletAddress"></span>
+    </div>
+
+    <!-- Registration / Start Game -->
+    <div class="center-box">
+        <h2>🎣 Start Fishing Adventure</h2>
+        <input type="text" id="nicknameInput" placeholder="Enter your nickname" maxlength="20">
+        <button id="startGameBtn">Start Game</button>
+    </div>
+
+    <!-- Fishing Game Screen -->
+    <div id="fishingScreen" style="display: none;">
+        <div class="game-container">
+            <!-- Left Panel: Stats -->
+            <div class="panel">
+                <h3>📊 Stats</h3>
+                <div id="statsContent">
+                    <p>Total Fish: 0</p>
+                    <p>Best Catch: None</p>
+                </div>
+                <div id="playerStats">Tokens: 100 | Rod Level: 1 | Bait: 0</div>
+
+                <!-- Equipment Section -->
+                <div id="equipmentSection" style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <h3>🎒 Equipment</h3>
+                    <div id="equipmentContent"></div>
+                </div>
+            </div>
+
+            <!-- Center Panel: Fishing -->
+            <div class="panel center-panel">
+                <h3>🎣 Cast Line</h3>
+                <div id="fishResult">
+                    <p>Click cast to start fishing!</p>
+                </div>
+                <button id="castBtn">🎣 Cast Line</button>
+                <p><small>Powered by GenLayer LLM & Web Fetching</small></p>
+            </div>
+
+            <!-- Right Panel: Shop & Leaderboard -->
+            <div class="panel">
+                <div id="shop">
+                    <h3>🛒 Shop</h3>
+                    <div id="shopContent"></div>
+                </div>
+                <div id="leaderboard">
+                    <h3>🏆 Leaderboard</h3>
+                    <div id="leaderboardList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div id="statusBar"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p id="loadingText">Processing...</p>
+        <div id="fishingAnimation" class="fishing-animation" style="display: none;">
+            <div class="fishing-line"></div>
+            <div class="fishing-hook"></div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" style="display: none;">
+        <div class="modal-content">
+            <h3>❌ Error</h3>
+            <p id="errorMessage">Something went wrong</p>
+            <div class="modal-buttons">
+                <button id="retryBtn" onclick="window.retryAction()">Retry</button>
+                <button onclick="window.closeErrorModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ocean Waves -->
+    <div class="ocean-waves">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>

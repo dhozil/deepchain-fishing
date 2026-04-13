@@ -1,0 +1,578 @@
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: Arial, sans-serif;
+}
+
+/* BACKGROUND */
+body {
+    background: url('banner.png') no-repeat center center;
+    background-size: cover;
+}
+
+/* FISHING GAME BACKGROUND (hanya saat game aktif) */
+body.fishing-active {
+    background: linear-gradient(to bottom, #87CEEB 0%, #1e3c72 50%, #0a1929 100%);
+    background-attachment: fixed;
+}
+
+/* OCEAN WAVES (hidden saat register) */
+.ocean-waves {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(to bottom, rgba(30,60,114,0.3), rgba(10,25,41,0.8));
+    overflow: hidden;
+    display: none; /* Hidden saat register */
+}
+
+/* Show ocean waves saat fishing active */
+body.fishing-active .ocean-waves {
+    display: block;
+}
+
+.wave {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 200%;
+    height: 100px;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"><path d="M0,60 C150,90 350,30 600,60 C850,90 1050,30 1200,60 L1200,120 L0,120 Z" fill="rgba(255,255,255,0.1)"/></svg>') repeat-x;
+    animation: wave 8s linear infinite;
+}
+
+.wave:nth-child(2) {
+    bottom: 10px;
+    animation: wave 12s linear infinite reverse;
+    opacity: 0.5;
+}
+
+.wave:nth-child(3) {
+    bottom: 20px;
+    animation: wave 16s linear infinite;
+    opacity: 0.3;
+}
+
+@keyframes wave {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+/* CLOUDS (hidden saat register) */
+.clouds {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    height: 150px;
+    overflow: hidden;
+    display: none; /* Hidden saat register */
+}
+
+/* Show clouds saat fishing active */
+body.fishing-active .clouds {
+    display: block;
+}
+
+.cloud {
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+    opacity: 0.7;
+}
+
+.cloud::before,
+.cloud::after {
+    content: '';
+    position: absolute;
+    background: white;
+    border-radius: 100px;
+}
+
+.cloud1 {
+    width: 100px;
+    height: 40px;
+    top: 20px;
+    left: 20%;
+    animation: float 20s infinite;
+}
+
+.cloud1::before {
+    width: 50px;
+    height: 50px;
+    top: -25px;
+    left: 10px;
+}
+
+.cloud1::after {
+    width: 60px;
+    height: 40px;
+    top: -15px;
+    right: 10px;
+}
+
+.cloud2 {
+    width: 80px;
+    height: 35px;
+    top: 60px;
+    left: 60%;
+    animation: float 25s infinite;
+}
+
+.cloud2::before {
+    width: 40px;
+    height: 40px;
+    top: -20px;
+    left: 15px;
+}
+
+.cloud2::after {
+    width: 50px;
+    height: 35px;
+    top: -10px;
+    right: 15px;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(20px) translateY(-10px); }
+    50% { transform: translateX(-10px) translateY(5px); }
+    75% { transform: translateX(15px) translateY(-5px); }
+}
+
+/* OVERLAY */
+.overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.25);
+    top: 0;
+    left: 0;
+}
+
+/* CONNECT BUTTON */
+#walletSection {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#connectWalletBtn,
+#disconnectWalletBtn {
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 101;
+    position: relative;
+}
+
+#disconnectWalletBtn {
+    background: #ff4444;
+    display: none;
+}
+
+#walletAddress {
+    color: #00cfff;
+    font-weight: bold;
+    z-index: 101;
+    position: relative;
+}
+
+/* HEADER */
+.header {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    color: white;
+    z-index: 10;
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 28px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.header p {
+    margin: 5px 0 0 0;
+    opacity: 0.8;
+}
+
+#walletAddress {
+    margin-left: 10px;
+    color: #00cfff;
+}
+
+/* 🎯 MAIN BOX (INI KUNCI NYA) */
+.center-box {
+    position: absolute;
+    top: 76%; /* 🔥 posisi turun dari tengah */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
+    background: rgba(0,0,0,0.65);
+    padding: 30px;
+    border-radius: 18px;
+    text-align: center;
+    width: 340px;
+    z-index: 5;
+
+    backdrop-filter: blur(10px);
+}
+
+/* TITLE */
+.center-box h2 {
+    color: white;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+/* INPUT */
+input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    margin-top: 10px;
+    font-size: 15px;
+}
+
+/* BUTTON */
+button {
+    margin-top: 15px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    background: #00cfff;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* FISHING GAME SCREEN */
+#fishingScreen {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    z-index: 20;
+}
+
+.game-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 100px 20px 20px 20px;
+}
+
+.panel {
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 20px;
+    color: white;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    min-width: 280px;
+}
+
+.center-panel {
+    flex: 1;
+    max-width: 400px;
+}
+
+.panel h3 {
+    margin-top: 0;
+    color: #00cfff;
+    text-align: center;
+}
+
+#castBtn {
+    font-size: 24px;
+    padding: 20px 40px;
+    background: #ff6b6b;
+    border-radius: 15px;
+    margin: 20px 0;
+    width: 100%;
+}
+
+#castBtn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+#fishResult {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    min-height: 100px;
+    text-align: center;
+}
+
+#statsContent {
+    margin: 15px 0;
+}
+
+#playerStats {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.shop-item {
+    background: rgba(255,255,255,0.1);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shop-item button {
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.shop-item button:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+/* STATUS */
+#statusBar {
+    position: absolute;
+    top: 70px;
+    right: 20px;
+    padding: 8px 15px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.9);
+    color: #333;
+    font-size: 14px;
+    z-index: 10;
+    display: none;
+}
+
+#statusBar.error {
+    background: #ff4444;
+    color: white;
+}
+
+#statusBar.success {
+    background: #44ff44;
+    color: white;
+}
+
+/* LEADERBOARD */
+#leaderboard {
+    margin-top: 20px;
+}
+
+#leaderboardList {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    margin: 5px 0;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    border-left: 3px solid #00cfff;
+}
+
+.leaderboard-item.current-player {
+    background: rgba(0,255,255,0.1);
+    border-left-color: #ff6b6b;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: #00cfff;
+    margin-right: 10px;
+    min-width: 25px;
+}
+
+.leaderboard-name {
+    flex: 1;
+    font-size: 14px;
+}
+
+.leaderboard-tokens {
+    font-weight: bold;
+    color: #ff6b6b;
+    font-size: 14px;
+}
+
+.leaderboard-rank.gold { color: #ffd700; }
+.leaderboard-rank.silver { color: #c0c0c0; }
+.leaderboard-rank.bronze { color: #cd7f32; }
+
+/* FISH ANIMATION */
+@keyframes fishJump {
+    0% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(10deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+.fish-emoji {
+    font-size: 48px;
+    animation: fishJump 0.5s ease-in-out;
+}
+
+/* LOADING SPINNER */
+#loadingOverlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.85);
+    padding: 30px 40px;
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid #00cfff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+#loadingText {
+    color: white;
+    font-size: 16px;
+    margin-top: 15px;
+    text-align: center;
+}
+
+/* FISHING ANIMATION */
+.fishing-animation {
+    position: relative;
+    width: 100%;
+    height: 60px;
+    overflow: hidden;
+}
+
+.fishing-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 0;
+    background: linear-gradient(to bottom, #00cfff, transparent);
+    animation: dropLine 2s ease-in-out infinite;
+}
+
+.fishing-hook {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    background: #ff6b6b;
+    border-radius: 0 0 5px 5px;
+    transform: translateX(-50%);
+    animation: hookSwing 2s ease-in-out infinite;
+}
+
+@keyframes dropLine {
+    0%, 100% { height: 0; }
+    50% { height: 100%; }
+}
+
+@keyframes hookSwing {
+    0%, 100% { transform: translateX(-50%) rotate(0deg); }
+    50% { transform: translateX(-50%) rotate(10deg); }
+}
+
+/* ERROR MODAL */
+#errorModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.modal-content {
+    background: rgba(20, 30, 50, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 400px;
+    border: 2px solid #ff4444;
+    backdrop-filter: blur(10px);
+}
+
+.modal-content h3 {
+    color: #ff4444;
+    margin-top: 0;
+    font-size: 24px;
+}
+
+.modal-content p {
+    color: white;
+    margin: 15px 0;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.modal-buttons button:first-child {
+    background: #00cfff;
+}
+
+.modal-buttons button:last-child {
+    background: #666;
+}
