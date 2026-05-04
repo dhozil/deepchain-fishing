@@ -82,30 +82,21 @@ class FishingGame(gl.Contract):
         self.players[a]=json.dumps(p)
         self.leaderboard[a]=str(p["total_earned"])
 
-    # ── LLM INTEGRATION: Generate Story (View Method Only) ──
+    # ── STORY GENERATION: Simple template-based stories ──
     @gl.public.view
     def get_catch_story(self, fish: str, rarity: str, weather: str) -> str:
-        """Generate AI-powered fishing story using LLM
+        """Generate fishing story based on catch details
         
         Args:
             fish: Fish name (e.g., "Tuna", "Swordfish")
             rarity: Rarity level (e.g., "common", "rare", "legendary")
             weather: Weather condition (e.g., "sunny", "rainy")
         """
-        prompt = "Create an exciting 2-sentence fishing story. A player caught a " + rarity + " " + fish + " in " + weather + " weather. Make it immersive and fun."
-        
-        try:
-            story = gl.ask(prompt, model="openai/gpt-4o-mini")
-            return story if story else self._fallback_story(fish, rarity, weather)
-        except:
-            return self._fallback_story(fish, rarity, weather)
-    
-    def _fallback_story(self, fish:str, rarity:str, weather:str) -> str:
         if rarity == "legendary":
-            return "An incredible catch! The legendary " + fish + " put up an epic fight before surrendering to your skill."
+            return "An incredible catch! The legendary " + fish + " put up an epic fight before surrendering to your skill in " + weather + " conditions."
         elif rarity == "rare":
             return "A rare beauty! The " + fish + " shimmered as you pulled it from the " + weather + " waters."
-        return "You caught a " + fish + "! Great catch!"
+        return "You caught a " + fish + "! Great catch on this " + weather + " day!"
 
     # ── WEB FETCHING: Get Real Weather Data (GenLayer Feature) ──
     def _get_fishing_conditions(self) -> dict:
@@ -171,7 +162,7 @@ class FishingGame(gl.Contract):
     def set_name(self,name:str):
         self.register(name)
 
-    # ── GAME with LLM & Web Integration ──
+    # ── GAME with Web Fetching Integration ──
     @gl.public.write
     def cast(self):
         a=self._normalize_addr(gl.message.sender_address)
@@ -288,69 +279,10 @@ class FishingGame(gl.Contract):
         p["rod"]=r
         self._save(a,p)
 
-    # ── LLM FEATURE: Analyze Player Performance ──
+    # ── PLAYER ANALYSIS: Template-based performance analysis ──
     @gl.public.view
-    def analyze_player(self, a: str):
-        """Analyze player performance (static analysis)
-        
-        Args:
-            a: Player wallet address (e.g., "0x1234...")
-        """
-        try:
-            original_a = a
-            a=self._normalize_addr(a)
-            exists = a in self.players
-            p=self._get(a)
-            name=self.names.get(a,"Unknown")
-            
-            catches = p.get("catches",[])
-            
-            # Debug info
-            debug_info = {
-                "original_input": original_a,
-                "normalized": a,
-                "exists_in_players": exists,
-                "player_name_from_names": name,
-                "catches_count": len(catches)
-            }
-            
-            if len(catches) == 0:
-                return json.dumps({
-                    "debug": debug_info,
-                    "analysis": "No fishing data yet. Start casting!",
-                    "player_data": p
-                })
-            
-            # Calculate stats
-            total_catches = len([c for c in catches if c["fish"]!="empty"])
-            rare_catches = len([c for c in catches if c["rarity"] in ["rare","legendary"]])
-            
-            # Static analysis (no LLM to avoid errors)
-            if rare_catches > 5:
-                analysis = "Amazing angler! You have caught " + str(rare_catches) + " rare fish. Keep up the great work!"
-            elif total_catches > 20:
-                analysis = "Great progress! " + str(total_catches) + " successful catches shows dedication. Try upgrading your rod for better results."
-            else:
-                analysis = "Keep fishing! Practice makes perfect. You have " + str(total_catches) + " catches so far."
-            
-            return json.dumps({
-                "debug": debug_info,
-                "name":name,
-                "analysis":analysis,
-                "stats":{
-                    "total_casts":p["total_casts"],
-                    "successful_catches":total_catches,
-                    "rare_catches":rare_catches,
-                    "balance":p["balance"]
-                }
-            })
-        except Exception as e:
-            return json.dumps({"error": str(e), "input_address": a})
-
-    # ── LLM FEATURE: AI-Powered Player Analysis (View Method) ──
-    @gl.public.view
-    def get_player_analysis_llm(self, a: str) -> str:
-        """Generate AI-powered player analysis using LLM (GenLayer Feature)
+    def get_player_analysis(self, a: str) -> str:
+        """Generate player performance analysis
         
         Args:
             a: Player wallet address (e.g., "0x1234...")
@@ -366,19 +298,17 @@ class FishingGame(gl.Contract):
         total_catches = len([c for c in catches if c["fish"] != "empty"])
         rare_catches = len([c for c in catches if c["rarity"] in ["rare", "legendary"]])
         
-        # LLM Integration: Generate personalized analysis
-        prompt = "Analyze this fishing performance for player " + name + ": " + str(total_catches) + " successful catches, " + str(rare_catches) + " rare/legendary, " + str(p['total_casts']) + " total casts, balance: " + str(p['balance']) + " tokens. Give encouraging 2-sentence advice."
-        
-        try:
-            analysis = gl.ask(prompt, model="openai/gpt-4o-mini")
-            if not analysis:
-                analysis = "Great fishing journey! Keep casting to improve your skills."
-        except:
-            analysis = "Great fishing journey! Keep casting to improve your skills."
+        # Template-based analysis
+        if rare_catches > 5:
+            analysis = "Amazing angler! You have caught " + str(rare_catches) + " rare fish. Your skill is truly impressive!"
+        elif total_catches > 20:
+            analysis = "Great progress! " + str(total_catches) + " successful catches shows dedication. Keep upgrading your gear!"
+        else:
+            analysis = "Keep fishing! Practice makes perfect. You have " + str(total_catches) + " catches so far."
         
         return json.dumps({
             "name": name,
-            "llm_analysis": analysis,
+            "analysis": analysis,
             "stats": {
                 "total_casts": p["total_casts"],
                 "successful_catches": total_catches,
