@@ -66,7 +66,7 @@ Every action — from casting your line to upgrading gear — is executed and st
 
 * Network: GenLayer Studio (studionet)
 * Chain ID: `0xF22F` (61999)
-* Contract Address: `0x260b9430aF87e8AF425c793790521caf9F028809`
+* Contract Address: `0xA8d1086D8711A8d5C1D5393053927Ad3A9C0710c`
 
 ---
 
