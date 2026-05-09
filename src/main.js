@@ -305,21 +305,14 @@ let playerData = {
     bestCatch: null
 };
 
-// 🏆 LEADERBOARD SYSTEM
-let leaderboardData = [];
+// 🏆 LEADERBOARD SYSTEM - fully on-chain via contract
 
-// Load saved data from localStorage
+// Load saved data from localStorage (nickname only - leaderboard is on-chain)
 function loadGameData() {
     const savedData = localStorage.getItem('fishingGameData');
     if (savedData) {
         const data = JSON.parse(savedData);
         playerData = { ...playerData, ...data };
-    }
-    
-    // Load leaderboard
-    const savedLeaderboard = localStorage.getItem('fishingGameLeaderboard');
-    if (savedLeaderboard) {
-        leaderboardData = JSON.parse(savedLeaderboard);
     }
 }
 
@@ -336,72 +329,7 @@ function saveGameData() {
     localStorage.setItem('fishingGameData', JSON.stringify(dataToSave));
 }
 
-// Update leaderboard
-function updateLeaderboard() {
-    if (!userAddress || !playerData.nickname) return;
-    
-    // Find existing player in leaderboard
-    const existingPlayerIndex = leaderboardData.findIndex(p => p.address === userAddress);
-    
-    const playerEntry = {
-        address: userAddress,
-        nickname: playerData.nickname,
-        tokens: playerData.tokens,
-        totalFish: playerData.totalFish,
-        lastUpdated: Date.now()
-    };
-    
-    if (existingPlayerIndex >= 0) {
-        // Update existing player
-        leaderboardData[existingPlayerIndex] = playerEntry;
-    } else {
-        // Add new player
-        leaderboardData.push(playerEntry);
-    }
-    
-    // Sort by tokens (descending)
-    leaderboardData.sort((a, b) => b.tokens - a.tokens);
-    
-    // Keep only top 50 players
-    leaderboardData = leaderboardData.slice(0, 50);
-    
-    // Save to localStorage
-    localStorage.setItem('fishingGameLeaderboard', JSON.stringify(leaderboardData));
-    
-    // Update UI
-    renderLeaderboard();
-}
-
-// Render leaderboard
-function renderLeaderboard() {
-    const leaderboardList = document.getElementById('leaderboardList');
-    
-    if (leaderboardData.length === 0) {
-        leaderboardList.innerHTML = `
-            <div class="leaderboard-item">
-                <span class="leaderboard-rank">-</span>
-                <span class="leaderboard-name">No players yet</span>
-                <span class="leaderboard-tokens">0</span>
-            </div>
-        `;
-        return;
-    }
-    
-    leaderboardList.innerHTML = leaderboardData.slice(0, 10).map((player, index) => {
-        const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
-        const isCurrentPlayer = player.address === userAddress;
-        
-        return `
-            <div class="leaderboard-item ${isCurrentPlayer ? 'current-player' : ''}">
-                <span class="leaderboard-rank ${rankClass}">
-                    ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}th`}
-                </span>
-                <span class="leaderboard-name">${player.nickname}</span>
-                <span class="leaderboard-tokens">${player.tokens.toLocaleString()}</span>
-            </div>
-        `;
-    }).join('');
-}
+// Leaderboard is rendered by loadLeaderboard() which fetches live on-chain data
 
 // ELEMENTS
 const walletBtn = document.getElementById('connectWalletBtn');
@@ -799,7 +727,7 @@ function showFishingScreen() {
     
     updateStats();
     updateShop();
-    renderLeaderboard(); // Show leaderboard when game starts
+    loadLeaderboard(); // fetch on-chain leaderboard
 }
 
 function updateStats() {
@@ -828,39 +756,15 @@ function updateEquipment() {
     const equipmentContent = document.getElementById('equipmentContent');
     if (!equipmentContent) return;
 
+    // playerData is already up-to-date from the last loadPlayerData() call
+    // No need for another genCall — just read from playerData directly
     const rodNames = ['bamboo', 'platinum', 'adamantite', 'mythic'];
+    const currentRod = rodNames[playerData.rodLevel - 1] || 'bamboo';
 
-    // Get owned rods from contract data if available
-    let ownedRods = ['bamboo']; // Default
-    let currentRod = 'bamboo';
+    // Reconstruct owned rods from rodLevel (all rods up to current level)
+    const ownedRods = rodNames.slice(0, playerData.rodLevel);
 
-    // Try to get from contract by calling get_stats
-    if (userAddress) {
-        genCall('get_stats', [userAddress.toLowerCase()]).then(stats => {
-            let statsObj = stats;
-            if (typeof stats === 'string') {
-                try {
-                    statsObj = JSON.parse(stats);
-                } catch (e) {
-                    console.error('Failed to parse stats in updateEquipment:', e);
-                }
-            }
-            if (statsObj?.inventory?.rods) {
-                ownedRods = statsObj.inventory.rods;
-                console.log('Owned rods from contract:', ownedRods);
-            }
-            if (statsObj?.rod) {
-                currentRod = statsObj.rod;
-                console.log('Current rod from contract:', currentRod);
-            }
-            renderEquipment(ownedRods, currentRod);
-        }).catch(e => {
-            console.error('Error getting stats for equipment:', e);
-            renderEquipment(ownedRods, currentRod);
-        });
-    } else {
-        renderEquipment(ownedRods, currentRod);
-    }
+    renderEquipment(ownedRods, currentRod);
 }
 
 function renderEquipment(ownedRods, currentRod) {
