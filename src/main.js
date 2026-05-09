@@ -299,7 +299,8 @@ let playerData = {
     nickname: '',
     tokens: 0,
     rodLevel: 1,
-    bait: 0,
+    bait: 'none',
+    baitCount: 0,
     totalFish: 0,
     bestCatch: null
 };
@@ -884,9 +885,9 @@ function renderEquipment(ownedRods, currentRod) {
 
     // Show bait
     equipHTML += '<div style="margin-bottom: 15px; margin-top: 15px;"><strong>Bait:</strong></div>';
-    const currentBait = playerData.bait && playerData.bait !== 'none' ? playerData.bait : null;
-    if (currentBait && playerData.baitCount > 0) {
-        const baitDisplayName = currentBait.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const hasBait = playerData.bait && playerData.bait !== 'none' && playerData.bait !== '0' && playerData.bait !== 0 && (playerData.baitCount || 0) > 0;
+    if (hasBait) {
+        const baitDisplayName = String(playerData.bait).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
         equipHTML += `
             <div class="shop-item">
                 <span>${baitDisplayName} (Equipped)</span>
