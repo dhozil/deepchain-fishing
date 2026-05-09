@@ -1044,8 +1044,9 @@ async function equipBait(baitName) {
     }
 }
 window.equipBait = equipBait;
+
+async function equipRod(rodName) {
     try {
-        showLoading(`Equipping ${rodName}...`);
         await sendTransaction('equip_rod', [rodName]);
         await new Promise(resolve => setTimeout(resolve, 8000));
         await loadPlayerData(0);
