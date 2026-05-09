@@ -5,7 +5,7 @@ import { TransactionStatus } from 'genlayer-js/types';
 // ============================================
 // GENLAYER CONFIGURATION
 // ============================================
-const CONTRACT_ADDRESS = "0xA8d1086D8711A8d5C1D5393053927Ad3A9C0710c";
+const CONTRACT_ADDRESS = "0xDf19e43b857d614BC386c2161701354e8998454E";
 
 // Mock mode untuk testing UI (set true kalau contract error)
 const MOCK_MODE = false;
@@ -570,7 +570,8 @@ function disconnectWallet() {
         nickname: '',
         tokens: 0,
         rodLevel: 1,
-        bait: 0,
+        bait: 'none',
+        baitCount: 0,
         totalFish: 0,
         bestCatch: null
     };
@@ -653,7 +654,8 @@ async function loadPlayerData(retryCount = 0) {
                 nickname: statsObj.name,
                 tokens: statsObj.balance || statsObj.total_earned || 100,
                 rodLevel: rodLevel,
-                bait: statsObj.bait === 'none' ? 0 : 3,
+                bait: statsObj.bait || 'none',
+                baitCount: statsObj.bait_count || 0,
                 totalFish: statsObj.recent_catches ? statsObj.recent_catches.filter(c => c.fish !== 'empty').length : 0,
                 bestCatch: statsObj.recent_catches && statsObj.recent_catches.length > 0
                     ? statsObj.recent_catches.filter(c => c.fish !== 'empty').reduce((best, c) =>
@@ -803,7 +805,7 @@ function updateStats() {
     const playerStats = document.getElementById('playerStats');
     if (playerStats) {
         playerStats.textContent =
-            `Tokens: ${playerData.tokens} | Rod Level: ${playerData.rodLevel} | Bait: ${playerData.bait}`;
+            `Tokens: ${playerData.tokens} | Rod Level: ${playerData.rodLevel} | Bait: ${playerData.bait && playerData.bait !== 'none' ? playerData.bait.replace(/_/g, ' ') + ' x' + playerData.baitCount : 'None'}`;
     }
 
     const statsContent = document.getElementById('statsContent');
@@ -882,12 +884,22 @@ function renderEquipment(ownedRods, currentRod) {
 
     // Show bait
     equipHTML += '<div style="margin-bottom: 15px; margin-top: 15px;"><strong>Bait:</strong></div>';
-    equipHTML += `
-        <div class="shop-item">
-            <span>Worm Bait</span>
-            <span>${playerData.bait} owned</span>
-        </div>
-    `;
+    const currentBait = playerData.bait && playerData.bait !== 'none' ? playerData.bait : null;
+    if (currentBait && playerData.baitCount > 0) {
+        const baitDisplayName = currentBait.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        equipHTML += `
+            <div class="shop-item">
+                <span>${baitDisplayName} (Equipped)</span>
+                <span style="color: #00cfff;">x${playerData.baitCount}</span>
+            </div>
+        `;
+    } else {
+        equipHTML += `
+            <div class="shop-item">
+                <span style="color: #999;">No bait equipped</span>
+            </div>
+        `;
+    }
 
     equipmentContent.innerHTML = equipHTML;
 }
