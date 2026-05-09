@@ -59,6 +59,7 @@ class FishingGame(gl.Contract):
                 "rod":"bamboo",
                 "bait":"none",
                 "bait_count":0,
+                "bait_inventory":{},
                 "inventory":{"rods":["bamboo"],"baits":[]},
                 "catches":[],
                 "total_casts":0,
@@ -227,10 +228,13 @@ class FishingGame(gl.Contract):
             rarity, pts = "common", FISH_POINTS[fish]
 
         if p["bait"] != "none":
-            p["bait_count"] = p.get("bait_count", 1) - 1
-            if p["bait_count"] <= 0:
+            inv = p.get("bait_inventory", {})
+            current = p["bait"]
+            inv[current] = inv.get(current, 1) - 1
+            if inv[current] <= 0:
+                del inv[current]
                 p["bait"] = "none"
-                p["bait_count"] = 0
+            p["bait_inventory"] = inv
 
         story   = ""
         message = "Missed..."
@@ -301,18 +305,28 @@ class FishingGame(gl.Contract):
 
         assert b in BAITS and b != "none"
         price = BAITS[b]["price"]
-
         assert p["balance"] >= price
 
         p["balance"] -= price
 
-        # If buying same bait type, increment quantity
-        # If different bait type, replace (reset count to 1)
-        if p.get("bait") == b:
-            p["bait_count"] = p.get("bait_count", 0) + 1
+        # Add to bait inventory — does NOT auto-equip
+        inv = p.get("bait_inventory", {})
+        inv[b] = inv.get(b, 0) + 1
+        p["bait_inventory"] = inv
+
+        self._save(a, p)
+
+    @gl.public.write
+    def equip_bait(self, b: str):
+        a = self._normalize_addr(gl.message.sender_address)
+        p = self._get(a)
+
+        if b == "none":
+            p["bait"] = "none"
         else:
+            inv = p.get("bait_inventory", {})
+            assert inv.get(b, 0) > 0, "You don't own this bait"
             p["bait"] = b
-            p["bait_count"] = 1
 
         self._save(a, p)
 
@@ -349,6 +363,7 @@ class FishingGame(gl.Contract):
             "rod":           p["rod"],
             "bait":          p["bait"],
             "bait_count":    p.get("bait_count", 0),
+            "bait_inventory": p.get("bait_inventory", {}),
             "inventory":     p["inventory"],
             "recent_catches": p["catches"]
         })
