@@ -5,7 +5,7 @@ import { TransactionStatus } from 'genlayer-js/types';
 // ============================================
 // GENLAYER CONFIGURATION
 // ============================================
-const CONTRACT_ADDRESS = "0x449fdBA5FBc4271E3bE01E9340EaA59246039d24";
+const CONTRACT_ADDRESS = "0xf663aEC19445F5e52c5dD33E8C25f47845396884";
 
 // Mock mode untuk testing UI (set true kalau contract error)
 const MOCK_MODE = false;
@@ -299,8 +299,10 @@ let playerData = {
     nickname: '',
     tokens: 0,
     rodLevel: 1,
+    ownedRods: ['bamboo'],
+    currentRod: 'bamboo',
     bait: 'none',
-    baitCount: 0,
+    baitInventory: {},
     totalFish: 0,
     bestCatch: null
 };
@@ -499,8 +501,10 @@ function disconnectWallet() {
         nickname: '',
         tokens: 0,
         rodLevel: 1,
+        ownedRods: ['bamboo'],
+        currentRod: 'bamboo',
         bait: 'none',
-        baitCount: 0,
+        baitInventory: {},
         totalFish: 0,
         bestCatch: null
     };
@@ -583,8 +587,10 @@ async function loadPlayerData(retryCount = 0) {
                 nickname: statsObj.name,
                 tokens: statsObj.balance || statsObj.total_earned || 100,
                 rodLevel: rodLevel,
+                ownedRods: ownedRods,
+                currentRod: currentRod,
                 bait: statsObj.bait || 'none',
-                baitCount: statsObj.bait_count || 0,
+                baitInventory: statsObj.bait_inventory || {},
                 totalFish: statsObj.recent_catches ? statsObj.recent_catches.filter(c => c.fish !== 'empty').length : 0,
                 bestCatch: statsObj.recent_catches && statsObj.recent_catches.length > 0
                     ? statsObj.recent_catches.filter(c => c.fish !== 'empty').reduce((best, c) =>
@@ -734,7 +740,7 @@ function updateStats() {
     const playerStats = document.getElementById('playerStats');
     if (playerStats) {
         playerStats.textContent =
-            `Tokens: ${playerData.tokens} | Rod Level: ${playerData.rodLevel} | Bait: ${playerData.bait && playerData.bait !== 'none' ? playerData.bait.replace(/_/g, ' ') + ' x' + playerData.baitCount : 'None'}`;
+            `Tokens: ${playerData.tokens} | Rod Level: ${playerData.rodLevel} | Bait: ${playerData.bait && playerData.bait !== 'none' ? playerData.bait.replace(/_/g, ' ') : 'None'}`;
     }
 
     const statsContent = document.getElementById('statsContent');
@@ -756,13 +762,8 @@ function updateEquipment() {
     const equipmentContent = document.getElementById('equipmentContent');
     if (!equipmentContent) return;
 
-    // playerData is already up-to-date from the last loadPlayerData() call
-    // No need for another genCall — just read from playerData directly
-    const rodNames = ['bamboo', 'platinum', 'adamantite', 'mythic'];
-    const currentRod = rodNames[playerData.rodLevel - 1] || 'bamboo';
-
-    // Reconstruct owned rods from rodLevel (all rods up to current level)
-    const ownedRods = rodNames.slice(0, playerData.rodLevel);
+    const ownedRods = playerData.ownedRods || ['bamboo'];
+    const currentRod = playerData.currentRod || 'bamboo';
 
     renderEquipment(ownedRods, currentRod);
 }
@@ -787,23 +788,32 @@ function renderEquipment(ownedRods, currentRod) {
         `;
     });
 
-    // Show bait
+    // Show bait inventory
     equipHTML += '<div style="margin-bottom: 15px; margin-top: 15px;"><strong>Bait:</strong></div>';
-    const hasBait = playerData.bait && playerData.bait !== 'none' && playerData.bait !== '0' && playerData.bait !== 0 && (playerData.baitCount || 0) > 0;
-    if (hasBait) {
-        const baitDisplayName = String(playerData.bait).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    const baitInventory = playerData.baitInventory || {};
+    const equippedBait = playerData.bait && playerData.bait !== 'none' ? playerData.bait : null;
+    const baitEntries = Object.entries(baitInventory).filter(([, qty]) => qty > 0);
+
+    if (baitEntries.length === 0) {
         equipHTML += `
             <div class="shop-item">
-                <span>${baitDisplayName} (Equipped)</span>
-                <span style="color: #00cfff;">x${playerData.baitCount}</span>
+                <span style="color: #999;">No bait owned</span>
             </div>
         `;
     } else {
-        equipHTML += `
-            <div class="shop-item">
-                <span style="color: #999;">No bait equipped</span>
-            </div>
-        `;
+        baitEntries.forEach(([baitName, qty]) => {
+            const displayName = baitName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            const isEquipped = baitName === equippedBait;
+            equipHTML += `
+                <div class="shop-item">
+                    <span>${displayName} ${isEquipped ? '(Equipped)' : ''} <span style="color:#00cfff;">x${qty}</span></span>
+                    ${!isEquipped
+                        ? `<button onclick="window.equipBait('${baitName}')">Equip</button>`
+                        : `<button onclick="window.equipBait('none')" style="background:#555;">Unequip</button>`
+                    }
+                </div>
+            `;
+        });
     }
 
     equipmentContent.innerHTML = equipHTML;
@@ -1018,7 +1028,22 @@ async function buyBait(baitName) {
     }
 }
 
-async function equipRod(rodName) {
+async function equipBait(baitName) {
+    try {
+        showLoading(baitName === 'none' ? 'Unequipping bait...' : `Equipping ${baitName}...`);
+        await sendTransaction('equip_bait', [baitName]);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        await loadPlayerData(0);
+        updateStats();
+        updateEquipment();
+        hideLoading();
+        showStatus(baitName === 'none' ? 'Bait unequipped!' : `Equipped ${baitName.replace(/_/g,' ')}!`, 'success');
+    } catch (e) {
+        hideLoading();
+        showStatus('Equip failed: ' + e.message, 'error');
+    }
+}
+window.equipBait = equipBait;
     try {
         showLoading(`Equipping ${rodName}...`);
         await sendTransaction('equip_rod', [rodName]);
