@@ -5,7 +5,7 @@ import { TransactionStatus } from 'genlayer-js/types';
 // ============================================
 // GENLAYER CONFIGURATION
 // ============================================
-const CONTRACT_ADDRESS = "0x9f2bBFb858365afAc96519159d5129866E76F315";
+const CONTRACT_ADDRESS = "0xA8d1086D8711A8d5C1D5393053927Ad3A9C0710c";
 
 // Mock mode untuk testing UI (set true kalau contract error)
 const MOCK_MODE = false;
