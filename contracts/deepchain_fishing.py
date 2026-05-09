@@ -58,6 +58,7 @@ class FishingGame(gl.Contract):
                 "total_earned":0,
                 "rod":"bamboo",
                 "bait":"none",
+                "bait_count":0,
                 "inventory":{"rods":["bamboo"],"baits":[]},
                 "catches":[],
                 "total_casts":0,
@@ -226,7 +227,10 @@ class FishingGame(gl.Contract):
             rarity, pts = "common", FISH_POINTS[fish]
 
         if p["bait"] != "none":
-            p["bait"] = "none"
+            p["bait_count"] = p.get("bait_count", 1) - 1
+            if p["bait_count"] <= 0:
+                p["bait"] = "none"
+                p["bait_count"] = 0
 
         story   = ""
         message = "Missed..."
@@ -301,7 +305,14 @@ class FishingGame(gl.Contract):
         assert p["balance"] >= price
 
         p["balance"] -= price
-        p["bait"] = b
+
+        # If buying same bait type, increment quantity
+        # If different bait type, replace (reset count to 1)
+        if p.get("bait") == b:
+            p["bait_count"] = p.get("bait_count", 0) + 1
+        else:
+            p["bait"] = b
+            p["bait_count"] = 1
 
         self._save(a, p)
 
