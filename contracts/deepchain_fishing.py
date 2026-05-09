@@ -348,6 +348,7 @@ class FishingGame(gl.Contract):
             "total_casts":   p["total_casts"],
             "rod":           p["rod"],
             "bait":          p["bait"],
+            "bait_count":    p.get("bait_count", 0),
             "inventory":     p["inventory"],
             "recent_catches": p["catches"]
         })
